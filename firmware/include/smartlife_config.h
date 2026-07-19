@@ -50,4 +50,23 @@ constexpr bool BOOT_BUZZER_ON = false;
 constexpr uint8_t SLEEP_FAN_PERCENT = 35;
 constexpr uint8_t ALERT_FAN_PERCENT = 100;
 
+constexpr bool PIR_ACTIVE_HIGH = true;
+constexpr bool WATER_ACTIVE_HIGH = true;
+constexpr bool FLAME_ACTIVE_HIGH = true;
+constexpr bool RELAY_ACTIVE_HIGH = true;
+constexpr bool BUZZER_ACTIVE_HIGH = true;
+constexpr bool FAN_ACTIVE_LOW = false;
+
+constexpr uint8_t FAN_PWM_CHANNEL = 0;
+constexpr uint16_t FAN_PWM_FREQUENCY_HZ = 25000;
+constexpr uint8_t FAN_PWM_RESOLUTION_BITS = 8;
+constexpr uint8_t RGB_COUNT = 12;
+constexpr uint8_t RGB_STRIP_BRIGHTNESS = 12;
+
+constexpr int SERVO_OPEN_DEGREES = 20;
+constexpr int SERVO_CLOSED_DEGREES = 110;
+constexpr int SERVO_MIN_PULSE_US = 500;
+constexpr int SERVO_MAX_PULSE_US = 2400;
+constexpr int KNOB_RAW_DEADBAND = 16;
+
 }  // namespace smartlife

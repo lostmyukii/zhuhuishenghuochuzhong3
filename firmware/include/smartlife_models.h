@@ -26,12 +26,19 @@ enum class AlertCode : uint8_t {
 struct SensorSnapshot {
   bool temperatureValid = false;
   float temperatureC = 0.0f;
+  bool humidityValid = false;
+  float humidityRh = 0.0f;
+  int lightRelative = 0;
+  int soundRelative = 0;
   bool mq2Ready = false;
+  int mq2Raw = 0;
   int mq2EqPpm = 0;
   bool waterDetected = false;
   bool flameDetected = false;
   bool presenceDetected = false;
-  int lightRelative = 0;
+  int keypadRaw = 0;
+  int knobRaw = 0;
+  bool knobValid = false;
 };
 
 struct ControlInputs {

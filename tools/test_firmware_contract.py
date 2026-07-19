@@ -11,6 +11,8 @@ MODELS = FIRMWARE / "include" / "smartlife_models.h"
 PLATFORMIO = FIRMWARE / "platformio.ini"
 BOARD = FIRMWARE / "boards" / "n16r8_esp32s3.json"
 MAIN = FIRMWARE / "src" / "main.cpp"
+HARDWARE_HEADER = FIRMWARE / "include" / "hardware_io.h"
+HARDWARE_SOURCE = FIRMWARE / "src" / "hardware_io.cpp"
 
 
 class FirmwareContractTest(unittest.TestCase):
@@ -109,6 +111,81 @@ class FirmwareContractTest(unittest.TestCase):
         self.assertIn("void loop()", main)
         self.assertIn("enum class Mode", models)
         self.assertIn("enum class RgbState", models)
+
+    def test_hardware_adapter_reads_every_installed_sensor(self) -> None:
+        source = self.read_required(HARDWARE_SOURCE)
+        for fragment in (
+            "analogRead(PIN_LIGHT)",
+            "analogRead(PIN_SOUND)",
+            "analogRead(PIN_KEYPAD)",
+            "analogRead(PIN_MQ2)",
+            "analogRead(PIN_TEMP_KNOB)",
+            "digitalRead(PIN_PIR)",
+            "digitalRead(PIN_WATER)",
+            "digitalRead(PIN_FLAME)",
+            "dht_.readTemperature()",
+            "dht_.readHumidity()",
+        ):
+            self.assertIn(fragment, source)
+
+    def test_boot_safe_outputs_precede_sensor_startup(self) -> None:
+        source = self.read_required(HARDWARE_SOURCE)
+        begin_at = source.index("void HardwareIo::begin()")
+        dht_at = source.index("dht_.begin()", begin_at)
+        for fragment in (
+            "writeFanPercent(BOOT_FAN_PERCENT)",
+            "writeRelay(BOOT_RELAY_ON)",
+            "writeBuzzer(BOOT_BUZZER_ON)",
+            "writeRgb(RgbState::Off)",
+        ):
+            self.assertGreater(source.index(fragment, begin_at), begin_at)
+            self.assertLess(source.index(fragment, begin_at), dht_at)
+        self.assertNotIn("servo_.attach", source[begin_at:dht_at])
+
+    def test_sampling_uses_independent_non_blocking_schedules(self) -> None:
+        main = self.read_required(MAIN)
+        source = self.read_required(HARDWARE_SOURCE)
+        header = self.read_required(HARDWARE_HEADER)
+        self.assertNotIn("delay(", main)
+        self.assertNotIn("delay(", source)
+        self.assertIn("const uint32_t nowMs = millis()", main)
+        self.assertIn("hardware.sample(nowMs)", main)
+        self.assertIn("FAST_SENSOR_INTERVAL_MS", source)
+        self.assertIn("DHT_INTERVAL_MS", source)
+        self.assertIn("lastFastSampleMs_", header)
+        self.assertIn("lastDhtAttemptMs_", header)
+
+    def test_dht_mq2_and_knob_health_contract_is_explicit(self) -> None:
+        source = self.read_required(HARDWARE_SOURCE)
+        models = self.read_required(MODELS)
+        for fragment in (
+            "DHT_STALE_MS",
+            "MQ2_WARMUP_MS",
+            "snapshot_.mq2Ready",
+            "snapshot_.knobValid",
+            "medianOfFiveRaw",
+            "applyKnobDeadband",
+            "mapKnobRawToThresholdC",
+        ):
+            self.assertIn(fragment, source)
+        for field in (
+            "humidityValid",
+            "humidityRh",
+            "soundRelative",
+            "lightRelative",
+            "mq2Raw",
+            "knobRaw",
+            "knobValid",
+            "keypadRaw",
+        ):
+            self.assertIn(field, models)
+
+    def test_actuator_layer_only_accepts_control_engine_outputs(self) -> None:
+        header = self.read_required(HARDWARE_HEADER)
+        main = self.read_required(MAIN)
+        self.assertIn("void applyOutputs(const ControlOutputs& outputs)", header)
+        self.assertIn("hardware.applyOutputs(evaluation.outputs)", main)
+        self.assertIn("evaluateControl(inputs, controlState)", main)
 
 
 if __name__ == "__main__":
