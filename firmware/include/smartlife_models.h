@@ -23,6 +23,19 @@ enum class AlertCode : uint8_t {
   Intrusion = 1 << 3,
 };
 
+enum class LocalEventType : uint8_t {
+  None,
+  ButtonA,
+  ThresholdChanged,
+};
+
+struct LocalEvent {
+  LocalEventType type = LocalEventType::None;
+  Mode mode = Mode::Auto;
+  int knobRaw = 0;
+  int temperatureThresholdC = 27;
+};
+
 struct SensorSnapshot {
   bool temperatureValid = false;
   float temperatureC = 0.0f;

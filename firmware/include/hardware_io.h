@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "local_controls.h"
+#include "smartlife_config.h"
 #include "smartlife_models.h"
 
 namespace smartlife {
@@ -20,12 +22,16 @@ class HardwareIo {
   void sample(uint32_t nowMs);
   const SensorSnapshot& snapshot() const;
   float temperatureThresholdC() const;
+  bool takeLocalEvent(LocalEvent& event);
   void applyOutputs(const ControlOutputs& outputs);
 
  private:
   void sampleFastSensors(uint32_t nowMs);
   void sampleDht(uint32_t nowMs);
   void updateDhtFreshness(uint32_t nowMs);
+  void enqueueLocalEvent(LocalEventType type,
+                         int knobRaw = 0,
+                         int temperatureThresholdC = 27);
 
   void writeFanPercent(uint8_t percent);
   void writeRelay(bool on);
@@ -49,6 +55,10 @@ class HardwareIo {
   std::size_t knobSampleCount_ = 0;
   int acceptedKnobRaw_ = 0;
   float temperatureThresholdC_ = 27.0f;
+  ButtonADebouncer buttonA_{};
+  std::array<LocalEvent, LOCAL_EVENT_QUEUE_CAPACITY> localEvents_{};
+  std::size_t localEventHead_ = 0;
+  std::size_t localEventCount_ = 0;
 
   bool servoAttached_ = false;
   int lastFanPercent_ = -1;

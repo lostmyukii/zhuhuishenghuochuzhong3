@@ -104,10 +104,25 @@ float HardwareIo::temperatureThresholdC() const {
   return temperatureThresholdC_;
 }
 
-void HardwareIo::sampleFastSensors(uint32_t) {
+bool HardwareIo::takeLocalEvent(LocalEvent& event) {
+  if (localEventCount_ == 0) {
+    return false;
+  }
+  event = localEvents_[localEventHead_];
+  localEventHead_ = (localEventHead_ + 1) % localEvents_.size();
+  --localEventCount_;
+  return true;
+}
+
+void HardwareIo::sampleFastSensors(uint32_t nowMs) {
   snapshot_.lightRelative = analogRelative(analogRead(PIN_LIGHT));
   snapshot_.soundRelative = analogRelative(analogRead(PIN_SOUND));
   snapshot_.keypadRaw = clampAdc(analogRead(PIN_KEYPAD));
+  const ButtonAUpdate buttonUpdate =
+      buttonA_.update(snapshot_.keypadRaw, nowMs);
+  if (buttonUpdate.clicked) {
+    enqueueLocalEvent(LocalEventType::ButtonA);
+  }
   snapshot_.mq2Raw = clampAdc(analogRead(PIN_MQ2));
   snapshot_.presenceDetected =
       digitalTriggered(digitalRead(PIN_PIR), PIR_ACTIVE_HIGH);
@@ -123,6 +138,8 @@ void HardwareIo::sampleFastSensors(uint32_t) {
   }
 
   if (knobSampleCount_ == knobSamples_.size()) {
+    const int previousThreshold =
+        static_cast<int>(std::lround(temperatureThresholdC_));
     const int medianRaw = medianOfFiveRaw(knobSamples_);
     acceptedKnobRaw_ = snapshot_.knobValid
                            ? applyKnobDeadband(acceptedKnobRaw_,
@@ -131,9 +148,30 @@ void HardwareIo::sampleFastSensors(uint32_t) {
                            : medianRaw;
     snapshot_.knobRaw = acceptedKnobRaw_;
     snapshot_.knobValid = true;
-    temperatureThresholdC_ =
-        static_cast<float>(mapKnobRawToThresholdC(acceptedKnobRaw_));
+    const int mappedThreshold = mapKnobRawToThresholdC(acceptedKnobRaw_);
+    temperatureThresholdC_ = static_cast<float>(mappedThreshold);
+    if (mappedThreshold != previousThreshold) {
+      enqueueLocalEvent(LocalEventType::ThresholdChanged,
+                        acceptedKnobRaw_,
+                        mappedThreshold);
+    }
   }
+}
+
+void HardwareIo::enqueueLocalEvent(LocalEventType type,
+                                   int knobRaw,
+                                   int temperatureThresholdC) {
+  if (localEventCount_ == localEvents_.size()) {
+    localEventHead_ = (localEventHead_ + 1) % localEvents_.size();
+    --localEventCount_;
+  }
+
+  const std::size_t tail =
+      (localEventHead_ + localEventCount_) % localEvents_.size();
+  localEvents_[tail].type = type;
+  localEvents_[tail].knobRaw = knobRaw;
+  localEvents_[tail].temperatureThresholdC = temperatureThresholdC;
+  ++localEventCount_;
 }
 
 void HardwareIo::sampleDht(uint32_t nowMs) {

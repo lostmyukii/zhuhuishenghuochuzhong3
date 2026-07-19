@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace smartlife {
@@ -68,5 +69,19 @@ constexpr int SERVO_CLOSED_DEGREES = 110;
 constexpr int SERVO_MIN_PULSE_US = 500;
 constexpr int SERVO_MAX_PULSE_US = 2400;
 constexpr int KNOB_RAW_DEADBAND = 16;
+
+constexpr uint8_t OLED_WIDTH = 128;
+constexpr uint8_t OLED_HEIGHT = 64;
+constexpr int8_t OLED_RESET_PIN = -1;
+constexpr uint8_t OLED_I2C_ADDRESS = 0x3C;
+constexpr uint32_t OLED_REFRESH_INTERVAL_MS = 250;
+constexpr uint32_t OLED_THRESHOLD_PAGE_MS = 2500;
+
+// Provisional A-key window from the read-only reference hardware. Freeze a
+// narrower range only after GPIO10 is sampled on this exact board at G2.
+constexpr int KEYPAD_A_ADC_MIN = 1950;
+constexpr int KEYPAD_A_ADC_MAX = 2300;
+constexpr uint32_t KEYPAD_DEBOUNCE_MS = 60;
+constexpr std::size_t LOCAL_EVENT_QUEUE_CAPACITY = 6;
 
 }  // namespace smartlife

@@ -13,6 +13,10 @@ BOARD = FIRMWARE / "boards" / "n16r8_esp32s3.json"
 MAIN = FIRMWARE / "src" / "main.cpp"
 HARDWARE_HEADER = FIRMWARE / "include" / "hardware_io.h"
 HARDWARE_SOURCE = FIRMWARE / "src" / "hardware_io.cpp"
+DISPLAY_HEADER = FIRMWARE / "include" / "display_controller.h"
+DISPLAY_SOURCE = FIRMWARE / "src" / "display_controller.cpp"
+LOCAL_CONTROLS_HEADER = FIRMWARE / "include" / "local_controls.h"
+LOCAL_CONTROLS_SOURCE = FIRMWARE / "src" / "local_controls.cpp"
 
 
 class FirmwareContractTest(unittest.TestCase):
@@ -186,6 +190,76 @@ class FirmwareContractTest(unittest.TestCase):
         self.assertIn("void applyOutputs(const ControlOutputs& outputs)", header)
         self.assertIn("hardware.applyOutputs(evaluation.outputs)", main)
         self.assertIn("evaluateControl(inputs, controlState)", main)
+
+    def test_oled_uses_fixed_bus_score_fields_and_honest_placeholders(self) -> None:
+        source = self.read_required(DISPLAY_SOURCE)
+        for fragment in (
+            "Wire.begin(PIN_OLED_SDA, PIN_OLED_SCL)",
+            "display_.begin(SSD1306_SWITCHCAPVCC, OLED_I2C_ADDRESS)",
+            'display_.print("T:")',
+            'display_.print(" c")',
+            'display_.print("Q:")',
+            'display_.print(" ppm")',
+            'display_.print("N:")',
+            'display_.print(" H:")',
+            'display_.print("XN:")',
+            'display_.print("YZ:")',
+            'display_.print("----")',
+            "snapshot.temperatureValid",
+            "snapshot.mq2Ready",
+            "snapshot.knobValid",
+        ):
+            self.assertIn(fragment, source)
+
+    def test_oled_refresh_and_threshold_page_are_non_blocking(self) -> None:
+        source = self.read_required(DISPLAY_SOURCE)
+        header = self.read_required(DISPLAY_HEADER)
+        main = self.read_required(MAIN)
+        self.assertNotIn("delay(", source)
+        self.assertIn("OLED_REFRESH_INTERVAL_MS", source)
+        self.assertIn("OLED_THRESHOLD_PAGE_MS", source)
+        self.assertIn("bool ready() const", header)
+        self.assertIn("display.begin()", main)
+        self.assertIn("display.render(", main)
+
+    def test_gpio10_button_a_has_configurable_window_and_single_click_debounce(self) -> None:
+        config = self.read_required(CONFIG)
+        source = self.read_required(LOCAL_CONTROLS_SOURCE)
+        hardware = self.read_required(HARDWARE_SOURCE)
+        main = self.read_required(MAIN)
+        for fragment in (
+            "KEYPAD_A_ADC_MIN",
+            "KEYPAD_A_ADC_MAX",
+            "KEYPAD_DEBOUNCE_MS",
+        ):
+            self.assertIn(fragment, config)
+        for fragment in (
+            "rawValue >= KEYPAD_A_ADC_MIN",
+            "rawValue <= KEYPAD_A_ADC_MAX",
+            "candidateSinceMs_",
+            "stablePressed_",
+            "update.clicked = true",
+        ):
+            self.assertIn(fragment, source)
+        self.assertIn("buttonA_.update(snapshot_.keypadRaw, nowMs)", hardware)
+        self.assertIn("enqueueLocalEvent(LocalEventType::ButtonA", hardware)
+        self.assertIn("toggleMode(controlState.targetMode)", main)
+
+    def test_button_and_knob_changes_emit_local_events_not_command_acks(self) -> None:
+        main = self.read_required(MAIN)
+        emit_start = main.index("void emitLocalEvent")
+        emit_end = main.index("void setup()", emit_start)
+        emit_block = main[emit_start:emit_end]
+        for fragment in (
+            '\\"type\\":\\"event\\"',
+            '\\"event\\":\\"button\\"',
+            '\\"key\\":\\"A\\"',
+            '\\"action\\":\\"toggle_mode\\"',
+            '\\"event\\":\\"threshold_changed\\"',
+            '\\"source\\":\\"knob\\"',
+        ):
+            self.assertIn(fragment, emit_block)
+        self.assertNotIn("ack", emit_block)
 
 
 if __name__ == "__main__":
