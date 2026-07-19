@@ -14,6 +14,7 @@ class DisplayController {
 
   void begin();
   bool ready() const;
+  bool showingThresholdPage(uint32_t nowMs) const;
   void render(uint32_t nowMs,
               Mode mode,
               const SensorSnapshot& snapshot,

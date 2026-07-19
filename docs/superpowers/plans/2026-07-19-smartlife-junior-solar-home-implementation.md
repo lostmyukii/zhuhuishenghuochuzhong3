@@ -4,7 +4,7 @@
 >
 > 对应规格：`docs/superpowers/specs/2026-07-19-smartlife-junior-solar-home-design.md`
 >
-> 当前状态：任务一至五已完成软件合同、原生测试和目标板编译；尚未烧录、建设网页或进行真板验收
+> 当前状态：任务一至六已完成软件合同、原生测试和目标板编译；尚未烧录、建设网页或进行真板验收
 
 ## 1. 目标
 
@@ -596,3 +596,16 @@ docs: finalize full-score demo and acceptance pack
 - 固件合同测试 `15/15`、纯逻辑原生测试 `19/19` 通过，PlatformIO `n16r8_esp32s3` 编译通过；固件约占 Flash `4.9%`、RAM `6.1%`。
 - 本次没有上传固件。OLED 地址、四行在真屏上的可读性、GPIO10 A 键真实 ADC 中心值和容差均是待 G2/G3 实测项；软件默认值不能视为实体通过。
 - 当前完成状态仍低于 `mock-passed`：统一协议、命令幂等、模拟主板、网页和全部真板证据尚未完成。
+
+## 23. 任务六执行结果（2026-07-19）
+
+- 新增单行 JSON 协议层和可原生测试的命令核心；启动输出身份明确的 `hello`，随后按 `1000ms` 节拍或状态变化即时输出 `telemetry`。
+- `telemetry` 包含 `seq`、`uptimeMs`、`mode`、`solarTerm`、全部评分传感器、阈值、执行器、OLED 四行镜像、告警、健康状态和 `lastAppliedCommandId`。
+- DHT 无效、MQ2 预热和旋钮尚未有效时使用 JSON `null` 与明确 `health`，不填充模拟正常值；MQ2 字段固定为 `airQualityEqPpm`，保留“等效估算”语义。
+- 远程白名单支持 `mode`、`set.solarTerm`、`set.guardArmed`、`set.buzzerEnabled`，以及每次单字段的风扇、窗帘、继电器、蜂鸣器和 RGB 调试命令；模式、节气、来源、类型和数值范围均先验证，失败不改变状态。
+- 最近 `16` 个命令 ID 缓存第一次完整 ack；重复 ID 原样返回首次 ack，不重复执行，也不增加应用计数。超出缓存窗口的历史 ID 仍由发送端保持全局唯一。
+- P1 期间 `Auto/Sleep` 命令更新目标模式并返回 `deferredBy=safety`；直接执行器命令返回 `safety_lock`。既有普通手动覆盖在进入 P1 时清除，告警解除后按当前模式和传感器重新计算，不恢复旧 GPIO 快照。
+- 本地 A 键、旋钮和告警变化统一输出 `event`；远程成功命令先输出 `ack`，随后请求带相同 `lastAppliedCommandId` 的新遥测。`ack` 仍只证明主板软件接受或拒绝，不能单独证明实物动作。
+- 固件合同测试 `19/19`、纯逻辑原生测试 `24/24` 通过，PlatformIO `n16r8_esp32s3` 编译通过；固件约占 Flash `5.4%`、RAM `6.5%`。
+- 本次没有上传固件，也没有读取真串口。真实 `hello/telemetry/event/ack` 内容、串口稳定性、执行器动作和 OLED 同步仍须 G3 真板证据。
+- 当前完成状态仍低于 `mock-passed`：任务七模拟主板、网页控制台和全部真板证据尚未完成。

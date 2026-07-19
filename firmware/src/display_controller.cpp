@@ -29,6 +29,10 @@ bool DisplayController::ready() const {
   return ready_;
 }
 
+bool DisplayController::showingThresholdPage(uint32_t nowMs) const {
+  return static_cast<int32_t>(thresholdPageUntilMs_ - nowMs) > 0;
+}
+
 void DisplayController::render(uint32_t nowMs,
                                Mode mode,
                                const SensorSnapshot& snapshot,
@@ -57,8 +61,7 @@ void DisplayController::render(uint32_t nowMs,
   display_.setTextColor(SSD1306_WHITE);
   display_.setTextSize(1);
 
-  const bool thresholdPageActive =
-      static_cast<int32_t>(thresholdPageUntilMs_ - nowMs) > 0;
+  const bool thresholdPageActive = showingThresholdPage(nowMs);
   if (thresholdPageActive) {
     renderThreshold(mode, snapshot, roundedThreshold);
   } else {

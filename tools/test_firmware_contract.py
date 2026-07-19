@@ -17,6 +17,10 @@ DISPLAY_HEADER = FIRMWARE / "include" / "display_controller.h"
 DISPLAY_SOURCE = FIRMWARE / "src" / "display_controller.cpp"
 LOCAL_CONTROLS_HEADER = FIRMWARE / "include" / "local_controls.h"
 LOCAL_CONTROLS_SOURCE = FIRMWARE / "src" / "local_controls.cpp"
+PROTOCOL_HEADER = FIRMWARE / "include" / "serial_protocol.h"
+PROTOCOL_SOURCE = FIRMWARE / "src" / "serial_protocol.cpp"
+PROTOCOL_CORE_HEADER = FIRMWARE / "include" / "protocol_core.h"
+PROTOCOL_CORE_SOURCE = FIRMWARE / "src" / "protocol_core.cpp"
 
 
 class FirmwareContractTest(unittest.TestCase):
@@ -189,7 +193,8 @@ class FirmwareContractTest(unittest.TestCase):
         main = self.read_required(MAIN)
         self.assertIn("void applyOutputs(const ControlOutputs& outputs)", header)
         self.assertIn("hardware.applyOutputs(evaluation.outputs)", main)
-        self.assertIn("evaluateControl(inputs, controlState)", main)
+        self.assertIn("evaluateControl(", main)
+        self.assertIn("controlState)", main)
 
     def test_oled_uses_fixed_bus_score_fields_and_honest_placeholders(self) -> None:
         source = self.read_required(DISPLAY_SOURCE)
@@ -243,23 +248,91 @@ class FirmwareContractTest(unittest.TestCase):
             self.assertIn(fragment, source)
         self.assertIn("buttonA_.update(snapshot_.keypadRaw, nowMs)", hardware)
         self.assertIn("enqueueLocalEvent(LocalEventType::ButtonA", hardware)
-        self.assertIn("toggleMode(controlState.targetMode)", main)
+        self.assertIn("toggleMode(protocolState.targetMode)", main)
 
     def test_button_and_knob_changes_emit_local_events_not_command_acks(self) -> None:
-        main = self.read_required(MAIN)
-        emit_start = main.index("void emitLocalEvent")
-        emit_end = main.index("void setup()", emit_start)
-        emit_block = main[emit_start:emit_end]
+        source = (
+            self.read_required(PROTOCOL_SOURCE)
+            if PROTOCOL_SOURCE.is_file()
+            else self.read_required(MAIN)
+        )
+        emit_start = source.index("emitLocalEvent")
+        emit_end = source.index("\n}", emit_start) + 2
+        emit_block = source[emit_start:emit_end]
         for fragment in (
-            '\\"type\\":\\"event\\"',
-            '\\"event\\":\\"button\\"',
-            '\\"key\\":\\"A\\"',
-            '\\"action\\":\\"toggle_mode\\"',
-            '\\"event\\":\\"threshold_changed\\"',
-            '\\"source\\":\\"knob\\"',
+            'doc["type"] = "event"',
+            'doc["event"] = "button"',
+            'doc["key"] = "A"',
+            'doc["action"] = "toggle_mode"',
+            'doc["event"] = "threshold_changed"',
+            'doc["source"] = "knob"',
         ):
             self.assertIn(fragment, emit_block)
         self.assertNotIn("ack", emit_block)
+
+    def test_hello_frame_contains_the_frozen_identity_contract(self) -> None:
+        source = self.read_required(PROTOCOL_SOURCE)
+        for fragment in (
+            'doc["type"] = "hello"',
+            'doc["protocolVersion"] = PROTOCOL_VERSION',
+            'doc["project"] = PROJECT_NAME',
+            'doc["profileId"] = PROFILE_ID',
+            'doc["board"] = BOARD_ID',
+            'doc["baud"] = SERIAL_BAUD',
+            'doc["rfid"] = RFID_ENABLED',
+        ):
+            self.assertIn(fragment, source)
+
+    def test_telemetry_frame_contains_score_truth_and_health(self) -> None:
+        source = self.read_required(PROTOCOL_SOURCE)
+        for fragment in (
+            'doc["type"] = "telemetry"',
+            'doc["seq"]',
+            'doc["uptimeMs"]',
+            'doc["mode"]',
+            'doc["solarTerm"]',
+            'doc["sensors"]',
+            'doc["thresholds"]',
+            'doc["actuators"]',
+            'doc["display"]',
+            'doc["alerts"]',
+            'doc["health"]',
+            'doc["lastAppliedCommandId"]',
+            'sensors["airQualityEqPpm"]',
+            'health["mq2"] = snapshot.mq2Ready ? "ready" : "warming"',
+            "TELEMETRY_INTERVAL_MS",
+        ):
+            self.assertIn(fragment, source)
+        self.assertIn("nullptr", source)
+
+    def test_command_validation_idempotency_and_safety_errors_are_explicit(self) -> None:
+        source = self.read_required(PROTOCOL_CORE_SOURCE)
+        header = self.read_required(PROTOCOL_CORE_HEADER)
+        for fragment in (
+            '"missing_id"',
+            '"unsupported_origin"',
+            '"invalid_mode"',
+            '"invalid_solar_term"',
+            '"out_of_range"',
+            '"unsupported_command"',
+            '"safety_lock"',
+            "findCachedAck",
+            "cacheAck",
+            "lastAppliedCommandId",
+        ):
+            self.assertIn(fragment, source)
+        self.assertIn("class CommandProcessor", header)
+        self.assertIn("ManualActuatorOverrides", header)
+
+    def test_serial_transport_emits_only_complete_json_lines(self) -> None:
+        source = self.read_required(PROTOCOL_SOURCE)
+        main = self.read_required(MAIN)
+        self.assertIn("serializeJson(doc, serial)", source)
+        self.assertIn("serial.println()", source)
+        self.assertIn("protocol.poll(", main)
+        self.assertIn("protocol.emitTelemetry(", main)
+        self.assertNotIn("Serial.print(", main)
+        self.assertNotIn("Serial.println(", main)
 
 
 if __name__ == "__main__":

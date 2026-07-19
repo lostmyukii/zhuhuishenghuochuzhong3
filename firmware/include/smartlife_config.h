@@ -83,5 +83,8 @@ constexpr int KEYPAD_A_ADC_MIN = 1950;
 constexpr int KEYPAD_A_ADC_MAX = 2300;
 constexpr uint32_t KEYPAD_DEBOUNCE_MS = 60;
 constexpr std::size_t LOCAL_EVENT_QUEUE_CAPACITY = 6;
+constexpr std::size_t SERIAL_INPUT_MAX_LENGTH = 512;
+constexpr std::size_t COMMAND_ACK_CACHE_SIZE = 16;
+constexpr std::size_t COMMAND_ID_MAX_LENGTH = 48;
 
 }  // namespace smartlife

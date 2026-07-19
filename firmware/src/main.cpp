@@ -4,6 +4,8 @@
 #include "display_controller.h"
 #include "hardware_io.h"
 #include "local_controls.h"
+#include "protocol_core.h"
+#include "serial_protocol.h"
 #include "smartlife_config.h"
 #include "solar_terms.h"
 
@@ -11,27 +13,24 @@ namespace {
 
 smartlife::HardwareIo hardware;
 smartlife::DisplayController display;
+smartlife::SerialProtocol protocol;
+smartlife::ProtocolRuntimeState protocolState{};
 smartlife::ControlState controlState = smartlife::defaultControlState();
-smartlife::SolarTerm activeSolarTerm = smartlife::SolarTerm::Lichun;
+uint8_t lastAlertMask = 0;
+bool alertMaskInitialized = false;
 
-const char* modeText(smartlife::Mode mode) {
-  return mode == smartlife::Mode::Auto ? "Auto" : "Sleep";
-}
-
-void emitLocalEvent(const smartlife::LocalEvent& event) {
-  if (event.type == smartlife::LocalEventType::ButtonA) {
-    Serial.print(F("{\"type\":\"event\",\"event\":\"button\",\"key\":\"A\",\"action\":\"toggle_mode\",\"mode\":\""));
-    Serial.print(modeText(event.mode));
-    Serial.println(F("\"}"));
-    return;
-  }
-  if (event.type == smartlife::LocalEventType::ThresholdChanged) {
-    Serial.print(F("{\"type\":\"event\",\"event\":\"threshold_changed\",\"source\":\"knob\",\"knobRaw\":"));
-    Serial.print(event.knobRaw);
-    Serial.print(F(",\"temperatureThresholdC\":"));
-    Serial.print(event.temperatureThresholdC);
-    Serial.println(F("}"));
-  }
+smartlife::ControlInputs makeControlInputs(uint32_t nowMs) {
+  const smartlife::SolarTermProfile& profile =
+      smartlife::solarTermProfile(protocolState.solarTerm);
+  smartlife::ControlInputs inputs{};
+  inputs.nowMs = nowMs;
+  inputs.sensors = hardware.snapshot();
+  inputs.temperatureThresholdC = hardware.temperatureThresholdC();
+  inputs.solarCurtainClosePercent = profile.curtainClosePercent;
+  inputs.solarLightThreshold = profile.lightThreshold;
+  inputs.guardArmed = protocolState.guardArmed;
+  inputs.buzzerEnabled = protocolState.buzzerEnabled;
+  return inputs;
 }
 
 }  // namespace
@@ -40,6 +39,7 @@ void setup() {
   hardware.begin();
   Serial.begin(smartlife::SERIAL_BAUD);
   display.begin();
+  protocol.emitHello(Serial, protocolState, display.ready());
 }
 
 void loop() {
@@ -49,31 +49,52 @@ void loop() {
   smartlife::LocalEvent localEvent{};
   while (hardware.takeLocalEvent(localEvent)) {
     if (localEvent.type == smartlife::LocalEventType::ButtonA) {
-      controlState.targetMode =
-          smartlife::toggleMode(controlState.targetMode);
-      localEvent.mode = controlState.targetMode;
+      protocolState.targetMode =
+          smartlife::toggleMode(protocolState.targetMode);
+      smartlife::clearManualOverrides(protocolState);
+      localEvent.mode = protocolState.targetMode;
     }
-    emitLocalEvent(localEvent);
+    protocol.emitLocalEvent(Serial, localEvent);
   }
 
-  const smartlife::SolarTermProfile& profile =
-      smartlife::solarTermProfile(activeSolarTerm);
-  smartlife::ControlInputs inputs{};
-  inputs.nowMs = nowMs;
-  inputs.sensors = hardware.snapshot();
-  inputs.temperatureThresholdC = hardware.temperatureThresholdC();
-  inputs.solarCurtainClosePercent = profile.curtainClosePercent;
-  inputs.solarLightThreshold = profile.lightThreshold;
-  inputs.guardArmed = false;
-  inputs.buzzerEnabled = true;
+  controlState.targetMode = protocolState.targetMode;
+  const smartlife::ControlEvaluation beforeCommands =
+      smartlife::evaluateControl(makeControlInputs(nowMs), controlState);
+  protocol.poll(Serial, protocolState, beforeCommands.outputs.safetyActive);
 
-  const smartlife::ControlEvaluation evaluation =
-      smartlife::evaluateControl(inputs, controlState);
+  controlState.targetMode = protocolState.targetMode;
+  smartlife::ControlEvaluation evaluation =
+      smartlife::evaluateControl(makeControlInputs(nowMs), controlState);
+  if (evaluation.outputs.safetyActive) {
+    smartlife::clearManualOverrides(protocolState);
+  }
+  smartlife::applyManualOverrides(protocolState, evaluation.outputs);
   controlState = evaluation.nextState;
   hardware.applyOutputs(evaluation.outputs);
   display.render(nowMs,
                  evaluation.outputs.mode,
                  hardware.snapshot(),
                  hardware.temperatureThresholdC());
+
+  if (!alertMaskInitialized) {
+    alertMaskInitialized = true;
+    if (evaluation.outputs.activeAlerts != 0) {
+      protocol.emitAlertChanged(Serial, evaluation.outputs.activeAlerts);
+    }
+  } else if (evaluation.outputs.activeAlerts != lastAlertMask) {
+    protocol.emitAlertChanged(Serial, evaluation.outputs.activeAlerts);
+  }
+  lastAlertMask = evaluation.outputs.activeAlerts;
+
+  if (protocol.telemetryDue(nowMs)) {
+    protocol.emitTelemetry(Serial,
+                           nowMs,
+                           protocolState,
+                           hardware.snapshot(),
+                           hardware.temperatureThresholdC(),
+                           evaluation.outputs,
+                           display.ready(),
+                           display.showingThresholdPage(nowMs));
+  }
   yield();
 }
