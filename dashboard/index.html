@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="style.css">
     <script src="protocol-core.js" defer></script>
     <script src="alert-core.js" defer></script>
+    <script src="voice-intent-core.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -26,6 +27,7 @@
       <symbol id="icon-curtain" viewBox="0 0 24 24"><path d="M4 4h16M6 4v16M18 4v16M6 8c4 1 4 7 0 9M18 8c-4 1-4 7 0 9"/></symbol>
       <symbol id="icon-lamp" viewBox="0 0 24 24"><path d="M8 14h8l-2-9h-4zM12 14v5M8 21h8"/></symbol>
       <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M6 16h12l-2-3V9a4 4 0 0 0-8 0v4zM10 19h4"/></symbol>
+      <symbol id="icon-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></symbol>
     </svg>
 
     <div class="page-atmosphere" aria-hidden="true">
@@ -253,6 +255,48 @@
           </div>
         </section>
       </div>
+
+      <section class="voice-panel panel" aria-labelledby="voice-title">
+        <div class="section-heading compact-heading">
+          <div><p class="section-kicker">本地二次过滤</p><h2 id="voice-title">语音白名单</h2></div>
+          <span class="voice-support" id="voice-support" data-state="checking">检测浏览器语音能力</span>
+        </div>
+
+        <div class="voice-layout">
+          <div class="voice-action-card">
+            <div class="voice-command-copy">
+              <div class="voice-orb" id="voice-orb" aria-hidden="true"><svg><use href="#icon-mic"/></svg></div>
+              <div>
+                <h3>只接受四句固定口令</h3>
+                <p>“打开自动模式”“切换到自动模式”“打开睡眠模式”“切换到睡眠模式”</p>
+              </div>
+            </div>
+            <div class="voice-actions">
+              <button class="button button-primary" id="voice-start" type="button">开始语音</button>
+              <button class="button button-quiet" id="voice-stop" type="button" disabled>停止收音</button>
+            </div>
+            <p class="voice-safety-note">语音不能关闭 MQ2、火焰、水浸或入侵判断，也不能直接覆盖风扇、继电器、RGB 和蜂鸣器。P1 安全状态始终优先。</p>
+          </div>
+
+          <form class="voice-text-card" id="voice-text-form">
+            <label for="voice-text-input">文字测试</label>
+            <div class="voice-text-action">
+              <input id="voice-text-input" type="text" inputmode="text" autocomplete="off" maxlength="40" placeholder="输入一条固定口令">
+              <button class="button button-secondary" id="voice-text-submit" type="submit">测试白名单</button>
+            </div>
+            <small>这是解析调试入口，不能替代麦克风识别和真实开发板闭环证据。</small>
+          </form>
+        </div>
+
+        <div class="voice-status" id="voice-status" data-state="idle" role="status" aria-live="polite" aria-atomic="true">
+          <span class="voice-status-mark" aria-hidden="true"></span>
+          <div>
+            <strong id="voice-status-title">等待语音指令</strong>
+            <p>识别文字：<span id="voice-transcript">尚未识别</span></p>
+            <small id="voice-status-detail">识别结果通过本地白名单后，才会作为 voice 命令发送。</small>
+          </div>
+        </div>
+      </section>
 
       <section class="log-panel panel" aria-labelledby="log-title">
         <div class="section-heading compact-heading">

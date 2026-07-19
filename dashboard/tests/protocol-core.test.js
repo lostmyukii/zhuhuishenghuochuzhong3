@@ -171,6 +171,14 @@ test("rejected, deferred and timed-out commands stay truthful", () => {
   assert.equal(deferred.status, "accepted_waiting_telemetry");
   assert.match(Core.transactionLabel(deferred), /安全状态解除后生效/);
 
+  const deferredComplete = Core.reduceTransaction(
+    deferred,
+    telemetry({ seq: 1, mode: "Sleep", lastAppliedCommandId: "cmd-deferred" }),
+    20,
+  );
+  assert.equal(deferredComplete.status, "complete");
+  assert.match(Core.transactionLabel(deferredComplete), /P1 安全联动继续/);
+
   const timeout = Core.expireTransaction(deferredBase, 5001);
   assert.equal(timeout.status, "timeout");
   assert.match(Core.transactionLabel(timeout), /超时/);

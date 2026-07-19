@@ -294,6 +294,9 @@
       return "已接受，等待状态更新";
     }
     if (transaction.status === "complete") {
+      if (transaction.ack && transaction.ack.deferredBy === "safety") {
+        return "状态已更新：模式已记录，P1 安全联动继续";
+      }
       return "状态已更新";
     }
     if (transaction.status === "rejected") {

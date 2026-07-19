@@ -5,7 +5,7 @@ const path = require("path");
 const dashboard = path.resolve(__dirname, "..");
 const read = (name) => fs.readFileSync(path.join(dashboard, name), "utf8");
 
-const required = ["index.html", "style.css", "protocol-core.js", "alert-core.js", "app.js"];
+const required = ["index.html", "style.css", "protocol-core.js", "alert-core.js", "voice-intent-core.js", "app.js"];
 for (const file of required) {
   assert.ok(fs.existsSync(path.join(dashboard, file)), `missing ${file}`);
 }
@@ -30,14 +30,24 @@ assert.match(html, /aria-live="polite"/);
 assert.match(html, /aria-atomic="true"/);
 assert.match(html, /id="connect-serial"/);
 assert.match(html, /id="disconnect-serial"/);
+assert.match(html, /id="voice-start"/);
+assert.match(html, /id="voice-stop"/);
+assert.match(html, /id="voice-text-form"/);
+assert.match(html, /只接受四句固定口令/);
+assert.match(html, /不能替代麦克风识别和真实开发板闭环证据/);
 assert.ok(html.indexOf("protocol-core.js") < html.indexOf("app.js"));
 assert.ok(html.indexOf("alert-core.js") < html.indexOf("app.js"));
+assert.ok(html.indexOf("voice-intent-core.js") < html.indexOf("app.js"));
 
 assert.match(app, /navigator\.serial/);
 assert.match(app, /baudRate:\s*115200/);
 assert.match(app, /TextDecoder/);
 assert.match(app, /lastAppliedCommandId/);
 assert.match(app, /SmartLifeConsoleTest/);
+assert.match(app, /SpeechRecognition/);
+assert.match(app, /webkitSpeechRecognition/);
+assert.match(app, /origin=voice/);
+assert.match(app, /runVoiceText/);
 assert.doesNotMatch(app, /innerHTML\s*=/);
 
 for (const token of ["--moon", "--ink", "--celadon", "--sunlight", "--wire", "--danger"]) {

@@ -3,7 +3,8 @@
 
   const Core = window.SmartLifeProtocolCore;
   const AlertCore = window.SmartLifeAlertCore;
-  if (!Core || !AlertCore) {
+  const VoiceCore = window.SmartLifeVoiceIntentCore;
+  if (!Core || !AlertCore || !VoiceCore) {
     return;
   }
 
@@ -49,6 +50,17 @@
     deviceBuzzer: $("device-buzzer"),
     deviceRgb: $("device-rgb"),
     rgbIndicator: $("rgb-indicator"),
+    voiceSupport: $("voice-support"),
+    voiceOrb: $("voice-orb"),
+    voiceStart: $("voice-start"),
+    voiceStop: $("voice-stop"),
+    voiceTextForm: $("voice-text-form"),
+    voiceTextInput: $("voice-text-input"),
+    voiceTextSubmit: $("voice-text-submit"),
+    voiceStatus: $("voice-status"),
+    voiceStatusTitle: $("voice-status-title"),
+    voiceTranscript: $("voice-transcript"),
+    voiceStatusDetail: $("voice-status-detail"),
     runLog: $("run-log"),
     clearLog: $("clear-log"),
   };
@@ -68,6 +80,20 @@
   let previousMode = null;
   let modeFlashUntil = 0;
   let localSettings = { guardArmed: null };
+  let speechRecognition = null;
+  let voiceListening = false;
+  let voiceState = createVoiceState();
+
+  function createVoiceState() {
+    return {
+      status: "idle",
+      title: "等待语音指令",
+      transcript: "尚未识别",
+      detail: "识别结果通过本地白名单后，才会作为 voice 命令发送。",
+      commandId: null,
+      source: null,
+    };
+  }
 
   function setText(element, value) {
     if (element) {
@@ -82,6 +108,39 @@
 
   function transportConnected() {
     return serialConnected || typeof testTransport === "function";
+  }
+
+  function transactionInFlight() {
+    return Boolean(
+      pendingTransaction &&
+      !["complete", "rejected", "timeout"].includes(pendingTransaction.status),
+    );
+  }
+
+  function speechRecognitionConstructor() {
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  }
+
+  function voiceFeatureAvailable() {
+    return typeof speechRecognitionConstructor() === "function";
+  }
+
+  function setVoiceState(status, title, detail, options = {}) {
+    voiceState = {
+      ...voiceState,
+      status,
+      title,
+      detail,
+      ...(Object.prototype.hasOwnProperty.call(options, "transcript")
+        ? { transcript: options.transcript }
+        : {}),
+      ...(Object.prototype.hasOwnProperty.call(options, "commandId")
+        ? { commandId: options.commandId }
+        : {}),
+      ...(Object.prototype.hasOwnProperty.call(options, "source")
+        ? { source: options.source }
+        : {}),
+    };
   }
 
   function currentTimeLabel(timestamp) {
@@ -370,8 +429,82 @@
     }
   }
 
+  function renderVoice() {
+    const supported = voiceFeatureAvailable();
+    setText(
+      refs.voiceSupport,
+      supported ? "浏览器语音可用" : "浏览器不支持语音，可用文字测试",
+    );
+    refs.voiceSupport.dataset.state = supported ? "ready" : "unsupported";
+
+    let visibleState = { ...voiceState };
+    if (
+      pendingTransaction &&
+      voiceState.commandId &&
+      pendingTransaction.id === voiceState.commandId &&
+      voiceState.status !== "send_error"
+    ) {
+      const id = pendingTransaction.id;
+      if (pendingTransaction.status === "waiting_ack") {
+        visibleState = {
+          ...visibleState,
+          status: "waiting_ack",
+          title: "语音命令已发送，等待开发板接受",
+          detail: `命令 ID：${id}；页面尚未改变模式结论。`,
+        };
+      } else if (pendingTransaction.status === "accepted_waiting_telemetry") {
+        const deferred = pendingTransaction.ack && pendingTransaction.ack.deferredBy === "safety";
+        visibleState = {
+          ...visibleState,
+          status: "accepted_waiting_telemetry",
+          title: deferred ? "模式已记录，P1 安全状态仍优先" : "开发板已接受，等待新遥测",
+          detail: deferred
+            ? `命令 ID：${id}；安全状态解除后再按目标模式计算。`
+            : `命令 ID：${id}；收到匹配的新遥测前不显示完成。`,
+        };
+      } else if (pendingTransaction.status === "complete") {
+        const deferred = pendingTransaction.ack && pendingTransaction.ack.deferredBy === "safety";
+        visibleState = {
+          ...visibleState,
+          status: "complete",
+          title: deferred ? "模式目标已更新，P1 安全联动继续" : "语音命令闭环完成",
+          detail: deferred
+            ? `命令 ID：${id}；ACK 与新遥测已匹配，安全输出没有被语音覆盖。`
+            : `命令 ID：${id}；已收到 ACK 和带相同 lastAppliedCommandId 的新遥测。`,
+        };
+      } else if (pendingTransaction.status === "rejected") {
+        const ack = pendingTransaction.ack || {};
+        visibleState = {
+          ...visibleState,
+          status: "rejected",
+          title: "开发板拒绝语音命令",
+          detail: ack.message || ack.error || `命令 ID：${id} 未被接受。`,
+        };
+      } else if (pendingTransaction.status === "timeout") {
+        visibleState = {
+          ...visibleState,
+          status: "timeout",
+          title: "语音命令等待超时",
+          detail: `命令 ID：${id}；没有形成 ACK 加新遥测闭环。`,
+        };
+      }
+    }
+
+    refs.voiceStatus.dataset.state = visibleState.status;
+    refs.voiceOrb.classList.toggle("is-listening", voiceListening);
+    setText(refs.voiceStatusTitle, visibleState.title);
+    setText(refs.voiceTranscript, visibleState.transcript);
+    setText(refs.voiceStatusDetail, visibleState.detail);
+
+    const busy = transactionInFlight();
+    refs.voiceStart.disabled = !supported || voiceListening || busy;
+    refs.voiceStop.disabled = !voiceListening;
+    refs.voiceTextInput.disabled = busy || voiceListening;
+    refs.voiceTextSubmit.disabled = busy || voiceListening;
+  }
+
   function renderControls(live) {
-    const available = transportConnected() && session.identityLocked && live;
+    const available = transportConnected() && session.identityLocked && live && !transactionInFlight();
     document.querySelectorAll("[data-command-kind]").forEach((button) => {
       button.disabled = !available;
       if (button.dataset.commandKind === "mode") {
@@ -380,7 +513,14 @@
     });
     refs.solarSelect.disabled = !available;
     refs.applySolar.disabled = !available;
-    setText(refs.controlLock, available ? "目标开发板在线，可安全操作" : "连接目标开发板后可操作");
+    setText(
+      refs.controlLock,
+      available
+        ? "目标开发板在线，可安全操作"
+        : transactionInFlight()
+          ? "上一条命令正在等待闭环"
+          : "连接目标开发板后可操作",
+    );
   }
 
   function renderConnection(now) {
@@ -412,11 +552,12 @@
     renderDevices(telemetry, values.live);
     renderControls(values.live);
     renderCommand();
+    renderVoice();
   }
 
-  function commandId() {
+  function commandId(prefix = "web") {
     commandCounter += 1;
-    return `web-${Date.now().toString(36)}-${commandCounter.toString(36)}`;
+    return `${prefix}-${Date.now().toString(36)}-${commandCounter.toString(36)}`;
   }
 
   async function writeCommand(command) {
@@ -436,6 +577,26 @@
     }
   }
 
+  async function dispatchCommand(command, summary) {
+    if (transactionInFlight()) {
+      return { ok: false, error: "上一条命令仍在等待闭环" };
+    }
+    transportError = null;
+    pendingTransaction = Core.createTransaction(command, Date.now(), session.telemetry ? Number(session.telemetry.seq) || 0 : 0);
+    logEntry("command", `${command.id} · ${summary}`);
+    render();
+    try {
+      await writeCommand(command);
+      render();
+      return { ok: true };
+    } catch (error) {
+      transportError = error && error.message ? error.message : "串口写入失败";
+      logEntry("发送", transportError, true);
+      render();
+      return { ok: false, error: transportError };
+    }
+  }
+
   async function sendCommand(kind, value) {
     if (!transportConnected() || !session.identityLocked || !Core.isFresh(session, Date.now())) {
       transportError = "目标开发板不在线";
@@ -450,17 +611,83 @@
       render();
       return;
     }
-    transportError = null;
-    pendingTransaction = Core.createTransaction(command, Date.now(), session.telemetry ? Number(session.telemetry.seq) || 0 : 0);
-    logEntry("command", `${command.id} · ${kind} → ${String(value)}`);
-    renderCommand();
-    try {
-      await writeCommand(command);
-    } catch (error) {
-      transportError = error && error.message ? error.message : "串口写入失败";
-      logEntry("发送", transportError, true);
+    const result = await dispatchCommand(command, `${kind} → ${String(value)}`);
+    if (!result.ok && !transportError) {
+      transportError = result.error;
       render();
     }
+  }
+
+  async function sendVoiceText(text, source = "microphone") {
+    const transcript = typeof text === "string" && text.trim() ? text.trim() : "（空）";
+    let parsed;
+    try {
+      parsed = VoiceCore.commandFromText(text, commandId("voice"));
+    } catch (error) {
+      setVoiceState("unknown", "语音内容无效", error.message, {
+        transcript,
+        commandId: null,
+        source,
+      });
+      render();
+      return { ok: false, reason: "invalid_input" };
+    }
+
+    if (!parsed.ok) {
+      setVoiceState(
+        "unknown",
+        "未通过本地白名单",
+        "没有发送命令。请完整说出页面列出的四句固定口令之一。",
+        { transcript, commandId: null, source },
+      );
+      logEntry("voice", `${source === "microphone" ? "语音识别" : "文字测试"}未通过白名单：${transcript}`, true);
+      render();
+      return { ok: false, reason: parsed.intent.reason };
+    }
+
+    const command = parsed.command;
+    const modeLabel = parsed.intent.mode === "Auto" ? "Auto 自动模式" : "Sleep 睡眠模式";
+    if (!transportConnected() || !session.identityLocked || !Core.isFresh(session, Date.now())) {
+      setVoiceState(
+        "not_sent",
+        "白名单通过，但没有发送",
+        `识别为 ${modeLabel}；目标开发板不在线，家庭状态没有改变。`,
+        { transcript, commandId: null, source },
+      );
+      logEntry("voice", `白名单通过但开发板不在线：${transcript}`, true);
+      render();
+      return { ok: false, reason: "board_offline", intent: parsed.intent };
+    }
+    if (transactionInFlight()) {
+      setVoiceState(
+        "not_sent",
+        "白名单通过，但没有发送",
+        "上一条命令仍在等待闭环，请稍后重试。",
+        { transcript, commandId: null, source },
+      );
+      render();
+      return { ok: false, reason: "command_in_flight", intent: parsed.intent };
+    }
+
+    setVoiceState(
+      "sending",
+      "白名单通过，准备发送",
+      `${modeLabel}；命令将以 origin=voice 进入开发板。`,
+      { transcript, commandId: command.id, source },
+    );
+    logEntry("voice", `${source === "microphone" ? "语音" : "文字测试"} → ${modeLabel}`);
+    render();
+    const dispatched = await dispatchCommand(command, `voice → mode ${parsed.intent.mode}`);
+    if (!dispatched.ok) {
+      setVoiceState("send_error", "语音命令发送失败", `${dispatched.error}；家庭状态没有改变。`, {
+        transcript,
+        commandId: command.id,
+        source,
+      });
+      render();
+      return { ok: false, reason: "transport_error", error: dispatched.error };
+    }
+    return { ok: true, command, intent: parsed.intent };
   }
 
   function serialFeatureAvailable() {
@@ -478,6 +705,150 @@
       "当前环境不能使用 Web Serial。请在本机 Chrome 或 Edge 中通过 localhost/HTTPS 打开页面。",
     );
     refs.connect.disabled = true;
+  }
+
+  function configureVoiceSupport() {
+    if (voiceFeatureAvailable()) {
+      return;
+    }
+    setVoiceState(
+      "unsupported",
+      "当前浏览器不支持语音识别",
+      "请使用支持语音识别的 Chrome/Edge；文字测试仍可检查本地白名单。",
+    );
+  }
+
+  function startVoiceRecognition() {
+    if (!voiceFeatureAvailable()) {
+      configureVoiceSupport();
+      renderVoice();
+      return;
+    }
+    if (transactionInFlight()) {
+      setVoiceState("not_sent", "暂时不能开始语音", "上一条命令仍在等待闭环。", {
+        commandId: null,
+      });
+      renderVoice();
+      return;
+    }
+
+    const Recognition = speechRecognitionConstructor();
+    const recognition = new Recognition();
+    recognition.lang = "zh-CN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    speechRecognition = recognition;
+
+    recognition.onstart = () => {
+      voiceListening = true;
+      setVoiceState("listening", "正在收音", "请完整说出一条固定口令。", {
+        transcript: "等待识别",
+        commandId: null,
+        source: "microphone",
+      });
+      logEntry("voice", "麦克风语音识别已开始");
+      renderVoice();
+    };
+    recognition.onspeechstart = () => {
+      setVoiceState("listening", "检测到声音，正在识别", "识别文字仍需通过本地白名单。", {
+        source: "microphone",
+      });
+      renderVoice();
+    };
+    recognition.onresult = (event) => {
+      const result = event.results && event.results[event.resultIndex];
+      const transcript = result && result[0] ? result[0].transcript : "";
+      setVoiceState("recognized", "已获得识别文字，正在过滤", "尚未向开发板发送命令。", {
+        transcript: transcript || "（空）",
+        commandId: null,
+        source: "microphone",
+      });
+      renderVoice();
+      void sendVoiceText(transcript, "microphone");
+    };
+    recognition.onerror = (event) => {
+      voiceListening = false;
+      const code = event && event.error ? event.error : "unknown";
+      setVoiceState("recognition_error", "语音识别未完成", VoiceCore.recognitionErrorMessage(code), {
+        commandId: null,
+        source: "microphone",
+      });
+      logEntry("voice", `语音识别失败：${code}`, true);
+      renderVoice();
+    };
+    recognition.onend = () => {
+      const endedWithoutResult = voiceListening && ["listening", "recognized"].includes(voiceState.status);
+      voiceListening = false;
+      speechRecognition = null;
+      if (voiceState.status === "stopping") {
+        setVoiceState(
+          "idle",
+          "本次收音已停止",
+          "如果尚未出现识别文字，则没有发送任何命令。",
+          { commandId: null, source: "microphone" },
+        );
+      } else if (endedWithoutResult && voiceState.status === "listening") {
+        setVoiceState(
+          "recognition_error",
+          "没有识别到有效语音",
+          "没有发送任何命令，请靠近麦克风后重试。",
+          { commandId: null, source: "microphone" },
+        );
+      }
+      renderVoice();
+    };
+
+    setVoiceState("starting", "正在请求麦克风", "浏览器可能会显示权限提示。", {
+      transcript: "等待识别",
+      commandId: null,
+      source: "microphone",
+    });
+    renderVoice();
+    try {
+      recognition.start();
+    } catch (error) {
+      speechRecognition = null;
+      voiceListening = false;
+      setVoiceState(
+        "recognition_error",
+        "无法开始语音识别",
+        `${error && error.message ? error.message : "浏览器拒绝启动"}；没有发送任何命令。`,
+        { commandId: null, source: "microphone" },
+      );
+      renderVoice();
+    }
+  }
+
+  function stopVoiceRecognition() {
+    if (!speechRecognition) return;
+    setVoiceState("stopping", "正在停止收音", "等待浏览器结束本次识别。", {
+      source: "microphone",
+    });
+    try {
+      speechRecognition.stop();
+    } catch (_error) {
+      speechRecognition = null;
+      voiceListening = false;
+    }
+    renderVoice();
+  }
+
+  function cancelVoiceRecognition() {
+    if (speechRecognition) {
+      speechRecognition.onstart = null;
+      speechRecognition.onspeechstart = null;
+      speechRecognition.onresult = null;
+      speechRecognition.onerror = null;
+      speechRecognition.onend = null;
+      try {
+        speechRecognition.abort();
+      } catch (_error) {
+        // Browser may already have ended the recognition session.
+      }
+    }
+    speechRecognition = null;
+    voiceListening = false;
   }
 
   async function readSerialLoop() {
@@ -526,6 +897,8 @@
       previousMode = null;
       modeFlashUntil = 0;
       localSettings = { guardArmed: null };
+      cancelVoiceRecognition();
+      voiceState = createVoiceState();
       logEntry("串口", "串口已打开，等待目标开发板 hello");
       render();
       serialLoopPromise = readSerialLoop();
@@ -536,6 +909,7 @@
   }
 
   async function disconnectSerial() {
+    cancelVoiceRecognition();
     keepReading = false;
     if (serialReader) {
       try {
@@ -566,6 +940,7 @@
     identityError = null;
     previousMode = null;
     modeFlashUntil = 0;
+    voiceState = createVoiceState();
     if (pendingTransaction && !["complete", "rejected", "timeout"].includes(pendingTransaction.status)) {
       transportError = "连接已断开";
     }
@@ -589,6 +964,12 @@
       refs.runLog.dataset.started = "true";
       logEntry("系统", "运行记录已清空");
     });
+    refs.voiceStart.addEventListener("click", startVoiceRecognition);
+    refs.voiceStop.addEventListener("click", stopVoiceRecognition);
+    refs.voiceTextForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void sendVoiceText(refs.voiceTextInput.value, "text-test");
+    });
     if (navigator.serial && typeof navigator.serial.addEventListener === "function") {
       navigator.serial.addEventListener("disconnect", (event) => {
         if (event.target === serialPort) disconnectSerial();
@@ -604,6 +985,7 @@
       return processLine(JSON.stringify(frame), timestamp);
     },
     setTransport(transport) {
+      cancelVoiceRecognition();
       testTransport = transport;
       serialConnected = false;
       session = Core.createSession();
@@ -613,9 +995,11 @@
       previousMode = null;
       modeFlashUntil = 0;
       localSettings = { guardArmed: null };
+      voiceState = createVoiceState();
       render();
     },
     reset() {
+      cancelVoiceRecognition();
       testTransport = null;
       session = Core.createSession();
       identityError = null;
@@ -623,7 +1007,14 @@
       transportError = null;
       previousMode = null;
       modeFlashUntil = 0;
+      voiceState = createVoiceState();
       render();
+    },
+    runVoiceText(text) {
+      return sendVoiceText(text, "text-test");
+    },
+    voiceState() {
+      return { ...voiceState };
     },
     state() {
       return { session, pendingTransaction, localSettings };
@@ -632,6 +1023,7 @@
   };
 
   configureSerialSupport();
+  configureVoiceSupport();
   bindControls();
   render();
   window.setInterval(() => render(Date.now()), 400);
