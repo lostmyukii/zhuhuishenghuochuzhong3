@@ -119,6 +119,7 @@
 - 创建 `firmware/boards/n16r8_esp32s3.json`
 - 创建 `firmware/include/smartlife_config.h`
 - 创建 `firmware/include/smartlife_models.h`
+- 创建最小可编译的 `firmware/src/main.cpp`，任务四再扩展真实硬件采样
 - 创建 `tools/test_firmware_contract.py`
 - 更新 `.gitignore`
 
