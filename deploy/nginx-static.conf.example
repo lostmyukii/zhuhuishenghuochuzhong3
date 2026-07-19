@@ -1,0 +1,34 @@
+# Place this `map` in the Nginx `http` context, then replace the three <...>
+# placeholders before enabling the server block.
+# This file is a deployment template only; it is not installed by this repository.
+map $uri $smartlife_cache_control {
+    default "no-cache, no-store, must-revalidate";
+    ~*\.(?:css|js)$ "public, max-age=31536000, immutable";
+}
+
+server {
+    listen 443 ssl http2;
+    server_name <dashboard-domain>;
+
+    root <absolute-release-directory>;
+    index index.html;
+
+    ssl_certificate <fullchain.pem>;
+    ssl_certificate_key <privkey.pem>;
+
+    add_header Content-Security-Policy "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'" always;
+    add_header Permissions-Policy "serial=(self), microphone=(self)" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Cache-Control $smartlife_cache_control always;
+
+    location ~* \.(?:css|js)$ {
+        try_files $uri =404;
+    }
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

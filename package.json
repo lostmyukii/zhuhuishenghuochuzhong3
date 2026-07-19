@@ -1,0 +1,13 @@
+{
+  "name": "smartlife-junior-solar-home",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Development-only browser regression tooling for the static N16R8 whole-home console.",
+  "scripts": {
+    "test:dashboard": "node dashboard/tests/protocol-core.test.js && node dashboard/tests/alert-core.test.js && node dashboard/tests/voice-intent-core.test.js && node dashboard/tests/dashboard-contract.test.js && node dashboard/tests/mock-replay.test.js",
+    "test:predeploy": "playwright test dashboard/tests/predeploy-browser.spec.js --workers=1 --reporter=line"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1"
+  }
+}
