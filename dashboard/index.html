@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#17363b">
+    <meta name="description" content="N16R8 节气智居两室两厅一卫本地运行控制台">
+    <title>节气智居 · 全屋运行台</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2317363b'/%3E%3Cpath d='M16 33 32 20l16 13v15H16Z' fill='none' stroke='%23f2f4ef' stroke-width='4'/%3E%3Cpath d='M27 48V36h10v12' fill='none' stroke='%23e5a43a' stroke-width='4'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="style.css">
+    <script src="protocol-core.js" defer></script>
+    <script src="alert-core.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <svg class="icon-sprite" aria-hidden="true">
+      <symbol id="icon-home" viewBox="0 0 24 24"><path d="m3 11 9-7 9 7v9H3z"/><path d="M9 20v-6h6v6"/></symbol>
+      <symbol id="icon-thermo" viewBox="0 0 24 24"><path d="M9 5a3 3 0 0 1 6 0v8.3a5 5 0 1 1-6 0z"/><path d="M12 8v8"/></symbol>
+      <symbol id="icon-air" viewBox="0 0 24 24"><path d="M3 8h10c3 0 3-4 0-4"/><path d="M3 12h16c3 0 3 4 0 4"/><path d="M3 16h8"/></symbol>
+      <symbol id="icon-sound" viewBox="0 0 24 24"><path d="M5 10v4h4l5 4V6l-5 4z"/><path d="M17 9a4 4 0 0 1 0 6"/></symbol>
+      <symbol id="icon-person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M6 21v-3a6 6 0 0 1 12 0v3"/></symbol>
+      <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></symbol>
+      <symbol id="icon-water" viewBox="0 0 24 24"><path d="M12 3s6 7 6 12a6 6 0 0 1-12 0c0-5 6-12 6-12z"/><path d="M9 16c.7 1.3 1.7 2 3 2"/></symbol>
+      <symbol id="icon-flame" viewBox="0 0 24 24"><path d="M13 3c1 5-3 5-1 9 1-2 3-3 4-5 3 3 4 6 3 9a7 7 0 0 1-14-1c0-4 3-7 6-10 0 3 1 4 2 5"/></symbol>
+      <symbol id="icon-fan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 10c-1-5 2-7 5-6 3 1 2 5-3 8M14 12c5-1 7 2 6 5-1 3-5 2-8-3M12 14c1 5-2 7-5 6-3-1-2-5 3-8M10 12c-5 1-7-2-6-5 1-3 5-2 8 3"/></symbol>
+      <symbol id="icon-curtain" viewBox="0 0 24 24"><path d="M4 4h16M6 4v16M18 4v16M6 8c4 1 4 7 0 9M18 8c-4 1-4 7 0 9"/></symbol>
+      <symbol id="icon-lamp" viewBox="0 0 24 24"><path d="M8 14h8l-2-9h-4zM12 14v5M8 21h8"/></symbol>
+      <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M6 16h12l-2-3V9a4 4 0 0 0-8 0v4zM10 19h4"/></symbol>
+    </svg>
+
+    <div class="page-atmosphere" aria-hidden="true">
+      <span class="season-orbit orbit-one"></span>
+      <span class="season-orbit orbit-two"></span>
+    </div>
+
+    <header class="masthead">
+      <div class="brand-block">
+        <div class="season-seal" aria-hidden="true"><span>廿四</span><span>节气</span></div>
+        <div>
+          <p class="eyebrow">N16R8 · 一屋一策</p>
+          <h1>节气智居 <span>· 全屋运行台</span></h1>
+          <p class="brand-note">两室两厅一卫的感知、判断与安全联动</p>
+        </div>
+      </div>
+
+      <div class="connection-bar" aria-label="连接状态">
+        <div class="status-cluster">
+          <span class="status-pill" id="serial-status" data-state="idle">串口未连接</span>
+          <span class="status-pill" id="board-status" data-state="idle">等待开发板</span>
+          <span class="status-pill" id="source-status" data-state="idle">暂无数据</span>
+          <span class="frame-time">最新帧 <time id="last-frame-time">--</time></span>
+        </div>
+        <div class="connection-actions">
+          <button class="button button-primary" id="connect-serial" type="button">连接 N16R8</button>
+          <button class="button button-quiet" id="disconnect-serial" type="button" disabled>断开</button>
+        </div>
+      </div>
+      <p class="browser-message" id="browser-message" hidden></p>
+      <div class="mock-ribbon" id="mock-ribbon" hidden>模拟数据，不代表实物动作</div>
+    </header>
+
+    <main>
+      <section class="alert-notice panel is-waiting" id="alert-notice" role="status" aria-live="polite" aria-atomic="true">
+        <div class="alert-symbol" aria-hidden="true">安</div>
+        <div class="alert-copy">
+          <p class="section-kicker" id="alert-kicker">家庭安全</p>
+          <h2 id="alert-title">等待实时数据</h2>
+          <p id="alert-summary">连接目标开发板后，这里会显示安全原因、来源位置和设备目标动作。</p>
+          <ul class="alert-list" id="alert-list"></ul>
+        </div>
+      </section>
+
+      <div class="hero-grid">
+        <section class="house-card panel" aria-labelledby="house-title">
+          <div class="section-heading house-heading">
+            <div>
+              <p class="section-kicker">一屋一策</p>
+              <h2 id="house-title">两室两厅一卫</h2>
+            </div>
+            <div class="mode-badge" id="house-mode">等待模式</div>
+          </div>
+
+          <div class="house-shell" id="house-shell">
+            <svg class="airflow-map" viewBox="0 0 1000 570" preserveAspectRatio="none" aria-hidden="true">
+              <path class="airflow-path" d="M500 280 C360 170 255 135 160 105"/>
+              <path class="airflow-path" d="M500 280 C670 150 800 125 900 105"/>
+              <path class="airflow-path" d="M500 280 C710 265 825 275 915 285"/>
+              <path class="airflow-path" d="M500 280 C360 360 255 410 145 475"/>
+              <path class="airflow-path" d="M500 280 C610 390 700 440 790 475"/>
+            </svg>
+
+            <div class="house-plan">
+              <article class="room room-master" data-room="master">
+                <div class="room-icon"><svg><use href="#icon-curtain"/></svg></div>
+                <div><h3>主卧</h3><p>睡眠 · 节气窗帘</p></div>
+                <strong data-room-value>窗帘 --</strong>
+                <span data-room-status>等待数据</span>
+              </article>
+
+              <article class="room room-living" data-room="living">
+                <div class="room-icon"><svg><use href="#icon-thermo"/></svg></div>
+                <div><h3>客厅</h3><p>舒适度 · 全屋主控</p></div>
+                <strong data-room-value>温度 --</strong>
+                <span data-room-status>等待数据</span>
+              </article>
+
+              <article class="room room-study" data-room="study">
+                <div class="room-icon"><svg><use href="#icon-sound"/></svg></div>
+                <div><h3>次卧/书房</h3><p>声音 · 低压灯</p></div>
+                <strong data-room-value>声音 --</strong>
+                <span data-room-status>等待数据</span>
+              </article>
+
+              <article class="room room-balcony" data-room="balcony">
+                <div class="room-icon"><svg><use href="#icon-sun"/></svg></div>
+                <div><h3>阳台附区</h3><p>自然光 GPIO1</p></div>
+                <strong data-room-value>光照 --</strong>
+                <span data-room-status>等待数据</span>
+              </article>
+
+              <article class="room room-dining" data-room="dining">
+                <div class="room-icon season-mark">节</div>
+                <div><h3>餐厅</h3><p>节气生活策略</p></div>
+                <strong data-room-value>节气 --</strong>
+                <span data-room-status>等待数据</span>
+              </article>
+
+              <article class="room room-kitchen" data-room="kitchen">
+                <div class="room-icon"><svg><use href="#icon-flame"/></svg></div>
+                <div><h3>厨房附区</h3><p>MQ2 GPIO2 · 火焰 GPIO45</p></div>
+                <strong data-room-value>空气 --</strong>
+                <span data-room-status>安全监测</span>
+              </article>
+
+              <article class="room room-entry" data-room="entry">
+                <div class="room-icon"><svg><use href="#icon-person"/></svg></div>
+                <div><h3>入户附区</h3><p>PIR GPIO5 · 布防</p></div>
+                <strong data-room-value>活动 --</strong>
+                <span data-room-status>安全监测</span>
+              </article>
+
+              <article class="room room-bath" data-room="bath">
+                <div class="room-icon"><svg><use href="#icon-water"/></svg></div>
+                <div><h3>卫生间</h3><p>水浸 GPIO8</p></div>
+                <strong data-room-value>水浸 --</strong>
+                <span data-room-status>安全监测</span>
+              </article>
+            </div>
+
+            <div class="house-heart" aria-hidden="true">
+              <svg><use href="#icon-home"/></svg>
+            </div>
+          </div>
+
+          <div class="house-legend" aria-label="房间状态图例">
+            <span><i class="legend-dot is-active"></i>当前模式参与</span>
+            <span><i class="legend-dot is-monitoring"></i>安全监测</span>
+            <span><i class="legend-dot is-alert"></i>安全告警</span>
+          </div>
+        </section>
+
+        <aside class="overview-column">
+          <section class="season-card panel" aria-labelledby="season-title">
+            <div class="season-name" aria-hidden="true" id="season-glyph">候</div>
+            <div class="season-copy">
+              <p class="section-kicker">今日策略</p>
+              <h2 id="season-title">等待节气</h2>
+              <p id="season-explanation">收到实时数据后，展示温度建议、窗帘偏置和补光阈值。</p>
+            </div>
+            <dl class="strategy-grid">
+              <div><dt>温度建议</dt><dd id="strategy-temperature">--</dd></div>
+              <div><dt>窗帘偏置</dt><dd id="strategy-curtain">--</dd></div>
+              <div><dt>补光阈值</dt><dd id="strategy-light">--</dd></div>
+            </dl>
+          </section>
+
+          <section class="data-panel panel" aria-labelledby="data-title">
+            <div class="section-heading compact-heading">
+              <div><p class="section-kicker">全屋感知</p><h2 id="data-title">实时数据</h2></div>
+              <span class="live-dot" id="live-dot">等待</span>
+            </div>
+            <div class="metric-grid">
+              <article class="metric"><span class="metric-code">T</span><p>室内温度</p><strong id="metric-temperature">--</strong><small id="metric-humidity">--</small></article>
+              <article class="metric"><span class="metric-code">Q</span><p>空气安全参考</p><strong id="metric-air">--</strong><small>MQ2 等效估算，非标准检测仪读数</small></article>
+              <article class="metric"><span class="metric-code">N</span><p>环境声音</p><strong id="metric-sound">--</strong><small>相对强度，不是 dB</small></article>
+              <article class="metric"><span class="metric-code">H</span><p>人员活动</p><strong id="metric-presence">等待实时数据</strong><small>PIR 不识别具体人员</small></article>
+              <article class="metric metric-small"><span class="metric-code">XN</span><p>旋钮原始值</p><strong id="metric-knob">--</strong><small>GPIO17 · 0~4095</small></article>
+              <article class="metric metric-small"><span class="metric-code">YZ</span><p>温控阈值</p><strong id="metric-threshold">--</strong><small>18~35℃ · ±0.5℃迟滞</small></article>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <div class="operation-grid">
+        <section class="control-panel panel" aria-labelledby="control-title">
+          <div class="section-heading compact-heading">
+            <div><p class="section-kicker">白名单操作</p><h2 id="control-title">家庭模式与节气</h2></div>
+            <span class="control-lock" id="control-lock">连接目标开发板后可操作</span>
+          </div>
+
+          <div class="control-groups">
+            <fieldset class="control-group">
+              <legend>家庭模式</legend>
+              <div class="segmented-control">
+                <button type="button" data-command-kind="mode" data-command-value="Auto" disabled>Auto 自动</button>
+                <button type="button" data-command-kind="mode" data-command-value="Sleep" disabled>Sleep 睡眠</button>
+              </div>
+              <p>A 键最近事件：<strong id="button-a-event">尚未收到</strong></p>
+            </fieldset>
+
+            <fieldset class="control-group">
+              <legend>二十四节气</legend>
+              <div class="select-action">
+                <label class="sr-only" for="solar-term-select">选择节气</label>
+                <select id="solar-term-select" disabled>
+                  <option>立春</option><option>雨水</option><option>惊蛰</option><option>春分</option><option>清明</option><option>谷雨</option>
+                  <option>立夏</option><option>小满</option><option>芒种</option><option>夏至</option><option>小暑</option><option>大暑</option>
+                  <option>立秋</option><option>处暑</option><option>白露</option><option>秋分</option><option>寒露</option><option>霜降</option>
+                  <option>立冬</option><option>小雪</option><option>大雪</option><option>冬至</option><option>小寒</option><option>大寒</option>
+                </select>
+                <button class="button button-secondary" id="apply-solar-term" type="button" disabled>应用节气</button>
+              </div>
+            </fieldset>
+
+            <fieldset class="control-group">
+              <legend>安全设置</legend>
+              <div class="plain-actions">
+                <button type="button" data-command-kind="guardArmed" data-command-value="true" disabled>开启布防</button>
+                <button type="button" data-command-kind="guardArmed" data-command-value="false" disabled>关闭布防</button>
+                <button type="button" data-command-kind="buzzerEnabled" data-command-value="false" disabled>安全蜂鸣器静音</button>
+                <button type="button" data-command-kind="buzzerEnabled" data-command-value="true" disabled>恢复安全蜂鸣器</button>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="command-status" id="command-status" role="status" aria-live="polite">
+            <span class="command-mark" aria-hidden="true"></span>
+            <div><strong>尚未发送操作</strong><small>页面只在 ACK 与新遥测同时到达后显示“状态已更新”。</small></div>
+          </div>
+        </section>
+
+        <section class="device-panel panel" aria-labelledby="device-title">
+          <div class="section-heading compact-heading">
+            <div><p class="section-kicker">开发板上报</p><h2 id="device-title">设备目标状态</h2></div>
+            <span class="truth-note">实物动作需现场观察</span>
+          </div>
+          <div class="device-grid">
+            <article class="device"><div class="device-icon"><svg><use href="#icon-fan"/></svg></div><div><p>客厅风扇</p><strong id="device-fan">--</strong><small>GPIO11 · PWM 目标</small></div></article>
+            <article class="device"><div class="device-icon"><svg><use href="#icon-curtain"/></svg></div><div><p>主卧窗帘</p><strong id="device-curtain">--</strong><small>GPIO9 · 关闭比例</small></div></article>
+            <article class="device"><div class="device-icon"><svg><use href="#icon-lamp"/></svg></div><div><p>书房低压灯</p><strong id="device-relay">GPIO 目标 --</strong><small>GPIO12 · 不代表触点反馈</small></div></article>
+            <article class="device"><div class="device-icon"><svg><use href="#icon-bell"/></svg></div><div><p>安全蜂鸣器</p><strong id="device-buzzer">--</strong><small>GPIO13 · 当前目标</small></div></article>
+            <article class="device"><div class="device-icon rgb-icon" id="rgb-indicator"></div><div><p>全屋状态灯</p><strong id="device-rgb">--</strong><small>GPIO46 · 当前目标</small></div></article>
+          </div>
+        </section>
+      </div>
+
+      <section class="log-panel panel" aria-labelledby="log-title">
+        <div class="section-heading compact-heading">
+          <div><p class="section-kicker">协议时间线</p><h2 id="log-title">运行记录</h2></div>
+          <button class="text-button" id="clear-log" type="button">清空记录</button>
+        </div>
+        <ol class="run-log" id="run-log">
+          <li><time>--:--:--</time><span class="log-type">系统</span><p>等待连接 N16R8。</p></li>
+        </ol>
+      </section>
+    </main>
+
+    <footer>
+      <p>本页面读取开发板目标状态；继电器触点、风扇转动和窗帘动作仍需现场观察。</p>
+      <p>本地 Web Serial · 115200 baud · <code>smartlife-junior-solar-home-v1</code></p>
+    </footer>
+
+    <noscript>请启用 JavaScript 后使用全屋运行台。</noscript>
+  </body>
+</html>
