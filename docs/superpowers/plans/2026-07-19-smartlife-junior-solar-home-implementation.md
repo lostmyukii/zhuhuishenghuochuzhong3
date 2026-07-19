@@ -609,3 +609,13 @@ docs: finalize full-score demo and acceptance pack
 - 固件合同测试 `19/19`、纯逻辑原生测试 `24/24` 通过，PlatformIO `n16r8_esp32s3` 编译通过；固件约占 Flash `5.4%`、RAM `6.5%`。
 - 本次没有上传固件，也没有读取真串口。真实 `hello/telemetry/event/ack` 内容、串口稳定性、执行器动作和 OLED 同步仍须 G3 真板证据。
 - 当前完成状态仍低于 `mock-passed`：任务七模拟主板、网页控制台和全部真板证据尚未完成。
+
+## 24. 任务七执行结果（2026-07-19）
+
+- 新增确定性模拟主板，固定复现 `smartlife-junior-solar-home-v1` 的 `hello/telemetry/event/ack`；所有模拟帧都显式携带 `source=mock`，不允许写入真板证据目录。
+- 模拟器采用可控逻辑时钟和递增 `seq`，覆盖 A 键 `Auto/Sleep`、GPIO17 旋钮 `18~35℃`、水浸 P1、小暑/大寒策略、`lastAppliedCommandId` 和停止遥测后的 `3500ms` 新鲜度边界。
+- 命令路径复现当前固件白名单与安全语义：最近 16 个 ID 返回首次缓存 ACK，重复命令不重复动作；P1 期间执行器返回 `safety_lock`，模式命令返回 `deferredBy=safety`。
+- `water-demo` 生成 11 行原始 JSONL，全部标记 `source=mock`；7 个遥测帧的序号连续为 `1..7`，并展示水浸触发、风扇 100%、继电器关闭、蜂鸣器报警、RGB 红色及安全连续 3000ms 后恢复的完整闭环。
+- 原始 JSONL 与采集时间戳分文件保存。旁车记录行号、时间、字节数和 SHA-256，11 行完整性校验一致，帧内容未被包装或改写。
+- 模拟主板专项测试 `8/8`、全部 Python 合同测试 `27/27`、固件原生测试 `24/24` 通过，PlatformIO `n16r8_esp32s3` 编译通过；固件约占 Flash `5.4%`、RAM `6.5%`。
+- 本次没有上传固件或读取真串口。任务八网页尚未建设，因此项目状态仍低于 `mock-passed`；模拟器通过不等于实体 GPIO、执行器或传感器通过。
