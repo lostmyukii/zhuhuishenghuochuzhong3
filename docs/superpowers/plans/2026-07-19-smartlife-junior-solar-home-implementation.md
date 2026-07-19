@@ -4,7 +4,7 @@
 >
 > 对应规格：`docs/superpowers/specs/2026-07-19-smartlife-junior-solar-home-design.md`
 >
-> 当前状态：任务一至六已完成软件合同、原生测试和目标板编译；尚未烧录、建设网页或进行真板验收
+> 当前状态：任务一至七已完成软件合同、模拟主板、原生测试和目标板编译；尚未烧录、建设网页或进行真板验收
 
 ## 1. 目标
 
@@ -14,9 +14,9 @@
 固定 GPIO 合同
   → 可测试的本地控制规则
   → N16R8 固件与单行 JSON 协议
-  → 本地 Web Serial 评分控制台
+  → 确定性模拟主板
+  → 本地 Web Serial 全屋运行台
   → 语音白名单命令
-  → 模拟主板验收
   → 真板逐模块验收
   → 5 分钟满分彩排证据
 ```
@@ -348,37 +348,41 @@ python3 tools/n16r8_mock_board.py --scenario water-demo
 test: add deterministic smartlife mock board
 ```
 
-## 12. 任务八：建设本地 Web Serial 评分控制台
+## 12. 任务八：建设本地 Web Serial 全屋运行台
 
 ### 文件
 
 - 创建 `dashboard/index.html`
 - 创建 `dashboard/style.css`
 - 创建 `dashboard/protocol-core.js`
+- 创建 `dashboard/alert-core.js`
 - 创建 `dashboard/app.js`
 - 创建 `dashboard/tests/protocol-core.test.js`
+- 创建 `dashboard/tests/alert-core.test.js`
 - 创建 `dashboard/tests/dashboard-contract.test.js`
 
 ### 先写的失败测试
 
 1. hello/telemetry/event/ack 分类正确，坏 JSON 不改变最后真状态。
 2. 只把 `profileId=smartlife-junior-solar-home-v1` 识别为目标主板。
-3. T/Q/N/H 按评分格式输出，Q 旁明确“MQ2 等效估算”。
+3. T/Q/N/H 按协议格式输出，Q 旁明确“MQ2 等效估算”。
 4. `3500ms` 无新帧后显示离线并清除实时结论。
 5. 命令 UI 等待 `ack + 新 telemetry`；只收到 ack 时显示“已接受，等待实物状态”。
 6. 告警只来自 `telemetry.alerts`，未知代码可见，不从 PIR 原始值伪造入侵。
 7. 继电器卡片显示“GPIO 目标状态”，不写成触点反馈。
 8. 390px 宽度无水平溢出，键盘可操作，颜色之外还有文字状态。
 
-### 页面最小范围
+### 页面最小范围与命名约束
 
-- 连接区：选择串口、断开、真板/模拟标识、最新帧时间。
-- 评分数据台：T/Q/N/H。
-- 模式区：Auto/Sleep、A 键最近事件、黄色灯和风扇状态。
-- 阈值区：XN/YZ 和温控迟滞解释。
-- 节气区：24 节气选择及小暑/大寒对比。
-- 安全区：告警原因、GPIO、当前值、阈值和真实联动摘要。
-- 证据区：command、ack、lastAppliedCommandId、新 telemetry、实物待确认状态。
+- 页面名称固定为“节气智居 · 全屋运行台”；可见界面不出现“评分、得分、满分、评委、评分数据台、评分操作”。
+- 连接状态栏：选择串口、断开、真板/模拟标识、最新帧时间。
+- 全屋剖面图：两室两厅一卫及厨房、入户、阳台附区，按现有硬件映射房间状态。
+- 全屋实时数据区：T/Q/N/H；Q 旁明确“MQ2 等效估算，非标准检测仪读数”。
+- 家庭模式区：Auto/Sleep、A 键最近事件、黄色灯和风扇状态。
+- 温控阈值区：XN/YZ 和温控迟滞解释。
+- 节气策略区：24 节气选择及小暑/大寒对比。
+- 家庭安全区：告警原因、GPIO、当前值、阈值和真实联动摘要。
+- 运行记录区：command、ack、lastAppliedCommandId、新 telemetry、实物待观察状态。
 
 ### 验证命令
 
@@ -391,7 +395,7 @@ python3 -m http.server 8767 --directory dashboard
 ### 提交点
 
 ```text
-feat: build evidence-first web serial score console
+feat: build whole-home web serial console
 ```
 
 ## 13. 任务九：接入语音白名单
