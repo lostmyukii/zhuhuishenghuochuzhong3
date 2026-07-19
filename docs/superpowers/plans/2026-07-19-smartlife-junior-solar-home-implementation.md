@@ -493,6 +493,13 @@ find /dev -maxdepth 1 -type c \( -name 'cu.usbserial-*' -o -name 'cu.wchusbseria
 
 `<已确认串口>` 是执行时必须解析的参数，不是允许原样运行的占位命令。
 
+### 2026-07-20 只读预检结果
+
+- 新增 `tools/g2_readonly_preflight.py` 和对应测试，能够枚举候选串口、核对 16 项固定 GPIO、记录固件大小与 SHA-256，并强制输出 `uploadAuthorized=false`。
+- 当前未发现 N16R8 常见 USB 数据串口候选；已编译固件为 `356192` bytes，SHA-256 为 `3ab9b174cf35ce3143fa0d8fe0eea5885ba07568aa6d284b67cc230a2137a4ca`。
+- 六项人工电气检查全部待完成，所以状态为 `hardware-preflight-pending`；本轮没有烧录。
+- 证据保存在 `docs/evidence/preflight/`，不得移动到 `real-board/` 或写成真板通过。
+
 ### 提交点
 
 烧录本身不自动产生代码提交；只有校准常量或文档发生可审计变化时才提交。

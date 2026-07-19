@@ -1,0 +1,143 @@
+{
+  "profileId": "smartlife-junior-solar-home-v1",
+  "evidence": "read-only-preflight",
+  "generatedAt": "2026-07-20T00:34:53+08:00",
+  "status": "hardware-preflight-pending",
+  "uploadAuthorized": false,
+  "uploadPerformed": false,
+  "serialPort": {
+    "patterns": [
+      "cu.usbserial-*",
+      "cu.wchusbserial-*",
+      "cu.SLAB_USBtoUART*",
+      "cu.usbmodem*"
+    ],
+    "candidates": [],
+    "confirmed": false,
+    "note": "单一候选也只表示系统枚举成功，不表示已经授权上传。"
+  },
+  "firmware": {
+    "path": "firmware/.pio/build/n16r8_esp32s3/firmware.bin",
+    "sizeBytes": 356192,
+    "sha256": "3ab9b174cf35ce3143fa0d8fe0eea5885ba07568aa6d284b67cc230a2137a4ca"
+  },
+  "gpioContract": {
+    "path": "firmware/include/smartlife_config.h",
+    "allMatch": true,
+    "checks": {
+      "PIN_LIGHT": {
+        "expected": 1,
+        "actual": 1,
+        "match": true
+      },
+      "PIN_SOUND": {
+        "expected": 4,
+        "actual": 4,
+        "match": true
+      },
+      "PIN_DHT11": {
+        "expected": 14,
+        "actual": 14,
+        "match": true
+      },
+      "PIN_PIR": {
+        "expected": 5,
+        "actual": 5,
+        "match": true
+      },
+      "PIN_KEYPAD": {
+        "expected": 10,
+        "actual": 10,
+        "match": true
+      },
+      "PIN_MQ2": {
+        "expected": 2,
+        "actual": 2,
+        "match": true
+      },
+      "PIN_WATER": {
+        "expected": 8,
+        "actual": 8,
+        "match": true
+      },
+      "PIN_FLAME": {
+        "expected": 45,
+        "actual": 45,
+        "match": true
+      },
+      "PIN_SERVO": {
+        "expected": 9,
+        "actual": 9,
+        "match": true
+      },
+      "PIN_FAN": {
+        "expected": 11,
+        "actual": 11,
+        "match": true
+      },
+      "PIN_RELAY": {
+        "expected": 12,
+        "actual": 12,
+        "match": true
+      },
+      "PIN_BUZZER": {
+        "expected": 13,
+        "actual": 13,
+        "match": true
+      },
+      "PIN_RGB": {
+        "expected": 46,
+        "actual": 46,
+        "match": true
+      },
+      "PIN_OLED_SDA": {
+        "expected": 41,
+        "actual": 41,
+        "match": true
+      },
+      "PIN_OLED_SCL": {
+        "expected": 42,
+        "actual": 42,
+        "match": true
+      },
+      "PIN_TEMP_KNOB": {
+        "expected": 17,
+        "actual": 17,
+        "match": true
+      }
+    }
+  },
+  "manualChecks": [
+    {
+      "id": "gpio17-voltage",
+      "description": "万用表确认 GPIO17 信号最大值不超过 3.3V",
+      "status": "pending"
+    },
+    {
+      "id": "mq2-divider",
+      "description": "万用表确认 MQ2 AO 分压后最大值不超过 3.3V",
+      "status": "pending"
+    },
+    {
+      "id": "common-ground",
+      "description": "确认风扇、舵机、继电器外部电源与 N16R8 共地",
+      "status": "pending"
+    },
+    {
+      "id": "relay-no-load",
+      "description": "继电器空载确认触发极性且上电不误吸合",
+      "status": "pending"
+    },
+    {
+      "id": "servo-detached",
+      "description": "舵机脱开机械连杆确认方向与安全端点",
+      "status": "pending"
+    },
+    {
+      "id": "wiring-photos",
+      "description": "拍摄电源、模块丝印和固定 GPIO 线号照片",
+      "status": "pending"
+    }
+  ],
+  "decision": "禁止上传：人工电气项未实测；如无串口候选，还需先解决 USB 数据连接。"
+}
