@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "profileId": "smartlife-junior-solar-home-v1",
+  "releaseVersion": "20260720-predeploy.1",
+  "sourceCommit": "24649357b36b78ddb20a99753b739ed4c7720581",
+  "entrypoint": "index.html",
+  "runtime": "static-https-web-serial",
+  "deploymentBoundary": "no-cloud-command-relay-no-mqtt-no-score-ui",
+  "assets": [
+    {
+      "path": "index.html",
+      "sizeBytes": 19825,
+      "sha256": "e8027c50d6a0d5f36f07fe0bd345c1fa0cb087822929d7fca68923f901ecd48a"
+    },
+    {
+      "path": "style.css",
+      "sizeBytes": 30130,
+      "sha256": "e4bc692bbc10ee33120798a29bb930044e38e3dc9b6d42164c405df9c57c7237"
+    },
+    {
+      "path": "protocol-core.js",
+      "sizeBytes": 11196,
+      "sha256": "784f57caf98fa828c9943c537bd1ccaa11a96d03ec88925c7dddf4d34dddf752"
+    },
+    {
+      "path": "alert-core.js",
+      "sizeBytes": 4020,
+      "sha256": "3400b4181b1a08d7e1debf534f0da0e7ecbccbc3f6e9395e48a3a0e166b7c3c5"
+    },
+    {
+      "path": "voice-intent-core.js",
+      "sizeBytes": 2561,
+      "sha256": "5665a2a0a9098fb26bdac8ca30d38eb557b8dba60ba03d784f92c5c6e659fc0a"
+    },
+    {
+      "path": "app.js",
+      "sizeBytes": 38489,
+      "sha256": "36863f7a69dadae44df72479bcb7a0d590bbf56b697f9d7f5dbf75f108076f3d"
+    },
+    {
+      "path": ".nojekyll",
+      "sizeBytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

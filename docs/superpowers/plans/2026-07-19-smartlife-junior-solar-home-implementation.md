@@ -663,3 +663,12 @@ docs: finalize full-score demo and acceptance pack
 - 完整软件闸门输出和每条命令的退出码、耗时、SHA-256 已写入 `docs/evidence/mock/`；Python `29/29`、固件原生 `24/24`、协议 `9/9`、告警 `6/6`、语音 `10/10`、页面合同和旧证据回放通过。
 - N16R8 目标编译成功，RAM `6.5%`、Flash `5.4%`。据此项目状态升级为 `mock-passed`。
 - `mock-passed` 只代表软件与模拟证据；本次没有烧录、读取真串口、验证真人麦克风或观察实物动作，G2/G3/G4 仍为 `pending`。
+
+## 28. 部署上线前执行结果（2026-07-20）
+
+- 新增纯静态发布构建器和核验器，发布目录只包含入口、CSS、协议/告警/语音/应用 JavaScript 及 `.nojekyll`；每项均记录大小和 SHA-256。
+- 构建时拒绝远程脚本、可见评分操作词、WSS、MQTT 和 Service Worker；运行合同固定为 `static-https-web-serial`，服务器不代理或保存设备命令。
+- 发布版本 `20260720-predeploy.1` 的 Dashboard 源提交为 `24649357b36b78ddb20a99753b739ed4c7720581`，留档清单 SHA-256 为 `237ab6fabfdc1244e8f75649d4508d7e169b2e92dd307bb58b0f313b2fd347ed`。
+- 实际构建目录通过本地 HTTP 加载：入口、五项版本化 CSS/JS 和清单全部返回 `200`，桌面恢复态和 390px 水浸 P1 回归 `2/2` 通过，控制台 0 错误、0 警告。
+- 提供 Nginx 与兼容静态托管平台的 HTTPS 安全响应头模板；没有安装模板、创建自动部署工作流、启用 Pages、写入域名/TLS 或上传文件。
+- 当前网页状态为 `predeploy-verified-not-deployed`。这不改变最高实物验收状态 `mock-passed`，也不授权烧录。
