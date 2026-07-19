@@ -1,0 +1,4 @@
+{"type":"command","id":"cmd-g1-sleep","origin":"test","mode":"Sleep"}
+{"type":"command","id":"cmd-g1-xiaoshu","origin":"test","set":{"solarTerm":"小暑"}}
+{"type":"command","id":"cmd-g1-dahan","origin":"test","set":{"solarTerm":"大寒"}}
+{"type":"command","id":"cmd-g1-water-sleep","origin":"test","mode":"Sleep"}

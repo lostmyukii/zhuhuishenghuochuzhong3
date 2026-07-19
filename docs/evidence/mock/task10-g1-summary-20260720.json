@@ -1,0 +1,162 @@
+{
+  "profileId": "smartlife-junior-solar-home-v1",
+  "evidence": "mock-only",
+  "status": "mock-passed",
+  "generatedAt": "2026-07-20T00:22:30+08:00",
+  "frameCount": 23,
+  "commandCount": 4,
+  "telemetrySequences": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "offlineBoundary": {
+    "lastFrameMs": 3000,
+    "freshAt3500": true,
+    "freshAt3501": false,
+    "framesAfterStop": 0
+  },
+  "checks": [
+    {
+      "id": "identity",
+      "passed": true,
+      "evidence": {
+        "profileId": "smartlife-junior-solar-home-v1",
+        "source": "mock"
+      }
+    },
+    {
+      "id": "auto_sleep",
+      "passed": true,
+      "evidence": {
+        "baseline": "Auto",
+        "commandMode": "Sleep",
+        "buttonMode": "Auto"
+      }
+    },
+    {
+      "id": "knob_cross_threshold",
+      "passed": true,
+      "evidence": {
+        "temperatureC": 28.0,
+        "low": {
+          "raw": 0,
+          "thresholdC": 18,
+          "fanPercent": 100
+        },
+        "high": {
+          "raw": 4095,
+          "thresholdC": 35,
+          "fanPercent": 0
+        }
+      }
+    },
+    {
+      "id": "xiaoshu_dahan",
+      "passed": true,
+      "evidence": {
+        "小暑": {
+          "curtain": 80,
+          "lightThreshold": 30
+        },
+        "大寒": {
+          "curtain": 20,
+          "lightThreshold": 45
+        }
+      }
+    },
+    {
+      "id": "water_trigger_recovery",
+      "passed": true,
+      "evidence": {
+        "alarmSeq": 9,
+        "recoverySeq": 12,
+        "alarmOutputs": {
+          "fanPercent": 100,
+          "curtainClosePercent": 20,
+          "curtainControlEnabled": false,
+          "relay": false,
+          "buzzer": true,
+          "rgb": "red"
+        },
+        "recoveryOutputs": {
+          "fanPercent": 35,
+          "curtainClosePercent": 20,
+          "curtainControlEnabled": false,
+          "relay": false,
+          "buzzer": false,
+          "rgb": "off"
+        }
+      }
+    },
+    {
+      "id": "command_ack_telemetry",
+      "passed": true,
+      "evidence": {
+        "commandIds": [
+          "cmd-g1-sleep",
+          "cmd-g1-xiaoshu",
+          "cmd-g1-dahan",
+          "cmd-g1-water-sleep"
+        ],
+        "telemetryCommandIds": [
+          "cmd-g1-dahan",
+          "cmd-g1-sleep",
+          "cmd-g1-water-sleep",
+          "cmd-g1-xiaoshu"
+        ]
+      }
+    },
+    {
+      "id": "offline_boundary",
+      "passed": true,
+      "evidence": {
+        "lastFrameMs": 3000,
+        "freshAt3500": true,
+        "freshAt3501": false,
+        "framesAfterStop": 0
+      }
+    },
+    {
+      "id": "mock_source",
+      "passed": true,
+      "evidence": {
+        "frameCount": 23,
+        "nonMockCount": 0
+      }
+    },
+    {
+      "id": "telemetry_sequence",
+      "passed": true,
+      "evidence": {
+        "sequences": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ]
+      }
+    }
+  ],
+  "sha256": {
+    "frames": "50c927c17fc9b8b315d65bb438459cf0f3f66ac17b4dc521a8a4e0d20084c0fb",
+    "commands": "9f0edebf89eaf60ae5d31b85d2ea49776afc383d91de1db955f5556245049b02"
+  }
+}

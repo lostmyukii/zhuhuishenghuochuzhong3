@@ -1,0 +1,156 @@
+{
+  "profileId": "smartlife-junior-solar-home-v1",
+  "evidence": "software-and-mock-only",
+  "status": "mock-passed",
+  "generatedAt": "2026-07-20T00:32:46+08:00",
+  "checks": [
+    {
+      "name": "python-contract-and-mock",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools",
+        "-p",
+        "test_*.py"
+      ],
+      "exitCode": 0,
+      "durationMs": 84,
+      "outputSha256": "2916104af4a0f8ae38f31ea8591736fde0068cadf30325d2f28c8c9d2c755a44"
+    },
+    {
+      "name": "firmware-native",
+      "command": [
+        "/Users/yukii/.platformio/penv/bin/pio",
+        "test",
+        "-d",
+        "firmware",
+        "-e",
+        "native"
+      ],
+      "exitCode": 0,
+      "durationMs": 5059,
+      "outputSha256": "bb7325f05c650b8cdf0924b34ee996db9cdfefc316f4ee074fb481475c2d5776"
+    },
+    {
+      "name": "firmware-build",
+      "command": [
+        "/Users/yukii/.platformio/penv/bin/pio",
+        "run",
+        "-d",
+        "firmware"
+      ],
+      "exitCode": 0,
+      "durationMs": 2647,
+      "outputSha256": "933b522aeb4052e9127be35698188a5c0a5f46d8520951e8fb93c06a88437210"
+    },
+    {
+      "name": "node-check-protocol",
+      "command": [
+        "node",
+        "--check",
+        "dashboard/protocol-core.js"
+      ],
+      "exitCode": 0,
+      "durationMs": 45,
+      "outputSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "node-check-alert",
+      "command": [
+        "node",
+        "--check",
+        "dashboard/alert-core.js"
+      ],
+      "exitCode": 0,
+      "durationMs": 32,
+      "outputSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "node-check-voice",
+      "command": [
+        "node",
+        "--check",
+        "dashboard/voice-intent-core.js"
+      ],
+      "exitCode": 0,
+      "durationMs": 32,
+      "outputSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "node-check-app",
+      "command": [
+        "node",
+        "--check",
+        "dashboard/app.js"
+      ],
+      "exitCode": 0,
+      "durationMs": 32,
+      "outputSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "dashboard-protocol",
+      "command": [
+        "node",
+        "dashboard/tests/protocol-core.test.js"
+      ],
+      "exitCode": 0,
+      "durationMs": 35,
+      "outputSha256": "d1d0baf86cf102934a59cc0f3d4f617b8a1522540c136622a22a5b29b1a8eecc"
+    },
+    {
+      "name": "dashboard-alert",
+      "command": [
+        "node",
+        "dashboard/tests/alert-core.test.js"
+      ],
+      "exitCode": 0,
+      "durationMs": 33,
+      "outputSha256": "3b504f0ef6d51aab76cdbb8becc502006474f36dd93532918eb9369d04e80df5"
+    },
+    {
+      "name": "dashboard-voice",
+      "command": [
+        "node",
+        "dashboard/tests/voice-intent-core.test.js"
+      ],
+      "exitCode": 0,
+      "durationMs": 35,
+      "outputSha256": "7e167473cb6a7aa0ec27e6f3c4a56a933b40aac51de81a0dcc2a71166778a756"
+    },
+    {
+      "name": "dashboard-contract",
+      "command": [
+        "node",
+        "dashboard/tests/dashboard-contract.test.js"
+      ],
+      "exitCode": 0,
+      "durationMs": 34,
+      "outputSha256": "6f83d3948b93f0b187cbef10f9bbf480c2b36a9bc64c9fc8d5eebcbc196b2a29"
+    },
+    {
+      "name": "dashboard-mock-replay",
+      "command": [
+        "node",
+        "dashboard/tests/mock-replay.test.js"
+      ],
+      "exitCode": 0,
+      "durationMs": 35,
+      "outputSha256": "12b6d1d673f2cf5a43e2dae431905e9c7f83b32737a642974d2044c788af4d58"
+    },
+    {
+      "name": "diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exitCode": 0,
+      "durationMs": 19,
+      "outputSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    }
+  ],
+  "logSha256": "8a7ead7db0a0f320c6f428662bf4c985e8b38b48c2ef2e3dcc2c9790b331d638"
+}

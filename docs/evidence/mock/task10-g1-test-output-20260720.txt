@@ -1,0 +1,199 @@
+===== python-contract-and-mock =====
+command=["python3", "-m", "unittest", "discover", "-s", "tools", "-p", "test_*.py"]
+exitCode=0
+durationMs=84
+.............................
+----------------------------------------------------------------------
+Ran 29 tests in 0.010s
+
+OK
+
+===== firmware-native =====
+command=["/Users/yukii/.platformio/penv/bin/pio", "test", "-d", "firmware", "-e", "native"]
+exitCode=0
+durationMs=5059
+Verbosity level can be increased via `-v, -vv, or -vvv` option
+Collected 4 tests
+
+Processing test_solar_terms in native environment
+--------------------------------------------------------------------------------
+Building...
+Testing...
+test/test_solar_terms/test_main.cpp:112: test_all_24_solar_terms_are_present_in_order	[PASSED]
+test/test_solar_terms/test_main.cpp:113: test_xiaoshu_and_dahan_match_approved_strategy	[PASSED]
+test/test_solar_terms/test_main.cpp:114: test_solar_term_name_lookup_rejects_unknown_values	[PASSED]
+test/test_solar_terms/test_main.cpp:115: test_knob_maps_adc_endpoints_and_midpoint_to_18_35_celsius	[PASSED]
+test/test_solar_terms/test_main.cpp:116: test_knob_filter_uses_median_and_deadband	[PASSED]
+test/test_solar_terms/test_main.cpp:117: test_solar_strategy_changes_curtain_and_light_but_not_knob_threshold	[PASSED]
+test/test_solar_terms/test_main.cpp:118: test_sleep_pauses_solar_curtain_and_supplemental_light	[PASSED]
+-------------- native:test_solar_terms [PASSED] Took 1.49 seconds --------------
+
+Processing test_protocol_core in native environment
+--------------------------------------------------------------------------------
+Building...
+Testing...
+test/test_protocol_core/test_main.cpp:150: test_valid_commands_apply_only_whitelisted_state	[PASSED]
+test/test_protocol_core/test_main.cpp:151: test_missing_id_bad_origin_mode_term_and_range_do_not_mutate_state	[PASSED]
+test/test_protocol_core/test_main.cpp:152: test_duplicate_id_returns_exact_first_ack_without_reapplying	[PASSED]
+test/test_protocol_core/test_main.cpp:153: test_safety_defers_mode_and_rejects_manual_actuator	[PASSED]
+test/test_protocol_core/test_main.cpp:154: test_manual_outputs_never_override_a_safety_evaluation	[PASSED]
+------------- native:test_protocol_core [PASSED] Took 1.07 seconds -------------
+
+Processing test_local_controls in native environment
+--------------------------------------------------------------------------------
+Building...
+Testing...
+test/test_local_controls/test_main.cpp:46: test_button_a_adc_window_is_explicit	[PASSED]
+test/test_local_controls/test_main.cpp:47: test_button_a_debounce_emits_once_per_press_release_cycle	[PASSED]
+test/test_local_controls/test_main.cpp:48: test_mode_toggle_is_strictly_auto_sleep_auto	[PASSED]
+------------ native:test_local_controls [PASSED] Took 1.19 seconds ------------
+
+Processing test_control_engine in native environment
+--------------------------------------------------------------------------------
+Building...
+Testing...
+test/test_control_engine/test_main.cpp:191: test_boot_outputs_are_physically_safe	[PASSED]
+test/test_control_engine/test_main.cpp:192: test_auto_fan_uses_half_degree_hysteresis	[PASSED]
+test/test_control_engine/test_main.cpp:193: test_sleep_has_low_fan_and_yellow_light_off	[PASSED]
+test/test_control_engine/test_main.cpp:194: test_mq2_flame_and_water_each_apply_primary_safety_override	[PASSED]
+test/test_control_engine/test_main.cpp:195: test_intrusion_does_not_invent_fan_or_relay_actions	[PASSED]
+test/test_control_engine/test_main.cpp:196: test_explicit_buzzer_mute_keeps_visual_safety_actions	[PASSED]
+test/test_control_engine/test_main.cpp:197: test_command_decisions_respect_safety_lock_and_deferred_mode	[PASSED]
+test/test_control_engine/test_main.cpp:198: test_water_clears_after_three_seconds_and_recomputes_sleep	[PASSED]
+test/test_control_engine/test_main.cpp:199: test_mq2_clear_uses_lower_threshold_and_stable_window	[PASSED]
+------------ native:test_control_engine [PASSED] Took 1.01 seconds ------------
+
+=================================== SUMMARY ===================================
+Environment    Test                 Status    Duration
+-------------  -------------------  --------  ------------
+native         test_solar_terms     PASSED    00:00:01.493
+native         test_protocol_core   PASSED    00:00:01.065
+native         test_local_controls  PASSED    00:00:01.190
+native         test_control_engine  PASSED    00:00:01.006
+================= 24 test cases: 24 succeeded in 00:00:04.754 =================
+
+===== firmware-build =====
+command=["/Users/yukii/.platformio/penv/bin/pio", "run", "-d", "firmware"]
+exitCode=0
+durationMs=2647
+Processing n16r8_esp32s3 (platform: espressif32; board: n16r8_esp32s3; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/n16r8_esp32s3.html
+PLATFORM: Espressif 32 (7.0.1) > ESP32-S3 N16R8 SmartLife Board (16MB Flash, 8MB OPI PSRAM)
+HARDWARE: ESP32S3 240MHz, 320KB RAM, 16MB Flash
+DEBUG: Current (cmsis-dap) External (cmsis-dap, esp-bridge, esp-builtin, esp-prog, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES:
+ - framework-arduinoespressif32 @ 3.20017.241212+sha.dcc1105b
+ - tool-esptoolpy @ 2.41100.0 (4.11.0)
+ - toolchain-riscv32-esp @ 8.4.0+2021r2-patch5
+ - toolchain-xtensa-esp32s3 @ 8.4.0+2021r2-patch5
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 41 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- DHT sensor library @ 1.4.6
+|-- Adafruit Unified Sensor @ 1.1.15
+|-- Adafruit SSD1306 @ 2.5.17
+|-- Adafruit GFX Library @ 1.12.6
+|-- ESP32Servo @ 1.2.1
+|-- ArduinoJson @ 7.4.3
+|-- Adafruit NeoPixel @ 1.15.5
+|-- Wire @ 2.0.0
+Building in release mode
+Retrieving maximum program size .pio/build/n16r8_esp32s3/firmware.elf
+Checking size .pio/build/n16r8_esp32s3/firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]   6.5% (used 21444 bytes from 327680 bytes)
+Flash: [=         ]   5.4% (used 355825 bytes from 6553600 bytes)
+========================= [SUCCESS] Took 2.40 seconds =========================
+
+Environment    Status    Duration
+-------------  --------  ------------
+n16r8_esp32s3  SUCCESS   00:00:02.395
+========================= 1 succeeded in 00:00:02.395 =========================
+
+===== node-check-protocol =====
+command=["node", "--check", "dashboard/protocol-core.js"]
+exitCode=0
+durationMs=45
+
+
+===== node-check-alert =====
+command=["node", "--check", "dashboard/alert-core.js"]
+exitCode=0
+durationMs=32
+
+
+===== node-check-voice =====
+command=["node", "--check", "dashboard/voice-intent-core.js"]
+exitCode=0
+durationMs=32
+
+
+===== node-check-app =====
+command=["node", "--check", "dashboard/app.js"]
+exitCode=0
+durationMs=32
+
+
+===== dashboard-protocol =====
+command=["node", "dashboard/tests/protocol-core.test.js"]
+exitCode=0
+durationMs=35
+✓ classifies protocol frames and rejects bad JSON without changing state
+✓ requires the exact hello identity before accepting telemetry
+✓ marks mock identity explicitly and never upgrades it to real
+✓ expires fresh data after 3500ms and clears live values
+✓ command completion requires both ack and a matching new telemetry
+✓ rejected, deferred and timed-out commands stay truthful
+✓ builds only the current dashboard command shapes
+✓ maps participating rooms without inventing safety alerts
+✓ keeps the approved Xiaoshu and Dahan strategy values
+9 protocol-core tests passed
+
+===== dashboard-alert =====
+command=["node", "dashboard/tests/alert-core.test.js"]
+exitCode=0
+durationMs=33
+✓ uses telemetry.alerts as the only alert truth
+✓ describes MQ2 value, threshold, GPIO and actual actions
+✓ normalizes gas and removes duplicates while preserving order
+✓ intrusion never invents fan or relay actions
+✓ explicit buzzer mute is reported instead of sounding
+✓ keeps unknown codes visible and safe for text rendering
+6 alert-core tests passed
+
+===== dashboard-voice =====
+command=["node", "dashboard/tests/voice-intent-core.test.js"]
+exitCode=0
+durationMs=35
+ok - maps only the approved Auto phrases
+ok - maps only the approved Sleep phrases
+ok - normalizes harmless whitespace and terminal punctuation
+ok - rejects empty, unrelated and ambiguous speech
+ok - rejects negation and dangerous safety overrides
+ok - does not accept approved words as a substring of a longer instruction
+ok - builds a voice-origin command only after re-parsing the text
+ok - unknown text never creates a command
+ok - requires a bounded non-empty command id
+ok - maps browser recognition failures to truthful local messages
+10/10 voice intent tests passed
+
+===== dashboard-contract =====
+command=["node", "dashboard/tests/dashboard-contract.test.js"]
+exitCode=0
+durationMs=34
+dashboard contract passed
+
+===== dashboard-mock-replay =====
+command=["node", "dashboard/tests/mock-replay.test.js"]
+exitCode=0
+durationMs=35
+mock replay passed: 11 frames, water P1 and recovery observed
+
+===== diff-check =====
+command=["git", "diff", "--check"]
+exitCode=0
+durationMs=19
